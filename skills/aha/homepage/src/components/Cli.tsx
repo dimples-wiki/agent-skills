@@ -30,7 +30,7 @@ const GROUPS: Group[] = [
       { kind: "out", text: "✓ aha 已全局安装 · 软链映射 · 零交互", tone: "ok" },
       { kind: "out", text: "# 装好了。下面这行,打在任意 agent 的对话框里:", tone: "dim" },
       { kind: "cmd", text: "/aha RAG" },
-      { kind: "out", text: "✓ 生成 ~/.aha/rag.html · 11/11 质量门通过", tone: "ok" },
+      { kind: "out", text: "✓ 生成 ~/.aha/rag.html · 13/13 质量门通过", tone: "ok" },
       { kind: "out", text: "概念书架 → http://127.0.0.1:7332 · 检索增强生成 已在架", tone: "link" },
     ],
   },
@@ -40,10 +40,10 @@ const GROUPS: Group[] = [
     name: "aha check",
     tone: "text-mint",
     term: "zsh — aha check",
-    desc: "11 道质量门扫描:单 h1、无颜色字面量、类比有失效边界……门不过,不交付。",
+    desc: "13 道质量门扫描:单 h1、无颜色字面量、自测答案默认折叠、比例数字有账本……门不过,不交付。",
     script: [
       { kind: "cmd", text: "npx @dimples/aha check fourier-transform.html" },
-      { kind: "out", text: "✓ 11/11 门通过 · 0 警告 · tokens v1.3.1", tone: "ok" },
+      { kind: "out", text: "✓ 13/13 门通过 · tokens v1.3.1", tone: "ok" },
     ],
   },
   {

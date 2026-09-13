@@ -24,7 +24,7 @@ const LAYERS = [
   {
     n: "04",
     title: "真实机制",
-    desc: "大白话先行、术语后置;随时间发生的过程配步骤模拟器,可以逐帧步进。",
+    desc: "大白话先行、术语后置,至少一个带真实值的实例(4 点手算一次 DFT);过程类配步骤模拟器,可逐帧步进。",
     always: true,
   },
   {
@@ -36,13 +36,13 @@ const LAYERS = [
   {
     n: "06",
     title: "边界与失败",
-    desc: "失败模式配上 1-2 字的记忆标签:雪崩、脑裂、活锁 —— 一眼认出,一字记住。",
+    desc: "误区按「你可能以为 X → 其实 Y → 分界在 Z」点名纠正;失败模式配 1-2 字记忆标签:雪崩、脑裂 —— 一眼认出,一字记住。",
     always: false,
   },
   {
     n: "07",
-    title: "记",
-    desc: "一句话公式式收尾,关键词高亮。合上页面,留下的是能复述的那一句。",
+    title: "记 · 自测",
+    desc: "一句话公式式收尾;随后 2-3 道自测题(答案折叠,考理解不考背诵)与页尾数字账本 —— 学没学会,一试便知。",
     always: true,
   },
 ];
@@ -83,7 +83,7 @@ export function Layers() {
                   <span className="mx-1 font-mono font-bold text-gold">1</span>、
                   <span className="mx-1 font-mono font-bold text-gold">4</span>、
                   <span className="mx-1 font-mono font-bold text-gold">7</span>
-                  层永远在场 —— 核心答案、真实机制、可复述的收尾,一篇都不能少。
+                  层永远在场 —— 核心答案、真实机制、带自测的收尾,一篇都不能少。
                 </p>
               </div>
             </Reveal>

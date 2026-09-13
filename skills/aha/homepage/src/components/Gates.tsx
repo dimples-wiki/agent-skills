@@ -13,6 +13,8 @@ const GATES = [
   "无提问者指代",
   "失败标签 1-2 字一致",
   "模拟器标签中文化",
+  "自测 ≥2 问·答案折叠",
+  "数字账本·比例数字有来源",
 ];
 
 export function Gates() {
@@ -30,7 +32,7 @@ export function Gates() {
                   <br />
                   先给自己上了
                   <br />
-                  <span className="text-gold">11 道门</span>。
+                  <span className="text-gold">13 道门</span>。
                 </>
               }
               lead="每篇图解交付前都要过机器扫描:结构、语义、颜色纪律、语气边界。门不过,不交付。"
@@ -38,7 +40,7 @@ export function Gates() {
             <Reveal delay={0.2}>
               <div className="mt-8 flex items-end gap-3">
                 <span className="font-mono text-6xl leading-none font-extrabold text-gold">
-                  11/11
+                  13/13
                 </span>
                 <span className="pb-1.5 font-mono text-xs text-cream-4">
                   gates · all green

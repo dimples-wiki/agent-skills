@@ -123,6 +123,21 @@ function MiniPage({ preset, theme }: { preset: Preset; theme: Theme }) {
           。
         </p>
       </div>
+      {/* 自测 + 数字账本(第 7 层的收尾结构) */}
+      <div className="mt-2.5 flex gap-2">
+        <span
+          className="flex-1 truncate rounded-lg border px-2 py-1.5 font-mono text-[9px]"
+          style={{ borderColor: t.line2, color: t.t2 }}
+        >
+          自测 ×2 · 答案折叠
+        </span>
+        <span
+          className="flex-1 truncate rounded-lg border px-2 py-1.5 font-mono text-[9px]"
+          style={{ borderColor: t.line2, color: t.t2 }}
+        >
+          账本 · 数字有来源
+        </span>
+      </div>
     </div>
   );
 }

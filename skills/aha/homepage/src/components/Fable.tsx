@@ -36,7 +36,7 @@ type FableLine =
 
 const FABLE_SCRIPT: FableLine[] = [
   { kind: "cmd", text: "/aha 垃圾回收" },
-  { kind: "out", text: "✓ 已生成 ~/.aha/garbage-collection.html · 11/11 质量门通过", tone: "ok" },
+  { kind: "out", text: "✓ 已生成 ~/.aha/garbage-collection.html · 13/13 质量门通过", tone: "ok" },
   { kind: "out", text: "图解 → http://127.0.0.1:7332/garbage-collection.html", tone: "link" },
   { kind: "out", text: "书架 → http://127.0.0.1:7332", tone: "link" },
   { kind: "out", text: "记不住?对我说「补充寓言故事」(≤1000 字 · 防套路清单把关)", tone: "dim" },
