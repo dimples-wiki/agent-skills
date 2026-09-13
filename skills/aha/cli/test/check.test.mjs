@@ -36,11 +36,11 @@ const goodPage = `<!DOCTYPE html>
 const gate = (res, id) => res.gates.find((g) => g.id === id);
 const run = (html) => checkHtml(html);
 
-test("good page: 12/12 gates pass", () => {
+test("good page: 13/13 gates pass", () => {
   const res = run(goodPage);
   assert.equal(res.ok, true);
-  assert.equal(res.passed, 12);
-  assert.equal(res.total, 12);
+  assert.equal(res.passed, 13);
+  assert.equal(res.total, 13);
 });
 
 test("single-h1: two h1 fails", () => {
@@ -123,7 +123,7 @@ test("script-syntax: valid module import does not false-fail", () => {
 
 test("receipt shape: has gate list, counts, exit-ok flag", () => {
   const res = run(goodPage);
-  assert.equal(res.gates.length, 12);
+  assert.equal(res.gates.length, 13);
   for (const g of res.gates) assert.ok(["pass", "fail"].includes(g.status));
   assert.equal(res.ok, true);
 });
@@ -332,6 +332,76 @@ test("gate12 self-test: quiz block without answers container fails", () => {
 test("gate12 self-test: takeaway mentioned only in CSS is not a takeaway block", () => {
   const res = run(goodPage.replace(".hero { border-color: var(--accent); }", ".takeaway { border-color: var(--accent); }"));
   assert.equal(gate(res, "self-test").status, "pass");
+});
+
+// —— 门 13：数字账本 ——
+// 依据 SKILL.md「数字纪律」：比例类数字（N% / N 倍）最容易"看起来像事实错误"；
+// 完整页（有 takeaway）须带 [data-ledger]，正文出现的每个 N%/N倍 字面量都要在账本里有条目，
+// 每条标 data-kind ∈ {实算, 出处, 估算}。
+const ledger = (items) => `<details class="ledger" data-ledger><summary>本页数字从哪来</summary><ul>${items}</ul></details>`;
+const fullPage = (body, led) =>
+  goodPage.replace("<h3>小节</h3>", `<h3>小节</h3>\n${body}\n<div class="takeaway"><p><mark>记</mark>住</p></div>\n${quizOk}\n${led}`);
+
+test("gate13 number-ledger: page without takeaway is exempt", () => {
+  assert.equal(gate(run(goodPage.replace("<h3>小节</h3>", "<h3>小节</h3><p>省 40%</p>")), "number-ledger").status, "pass");
+});
+
+test("gate13 number-ledger: full page without ledger block fails", () => {
+  assert.equal(gate(run(fullPage("<p>无数字</p>", "")), "number-ledger").status, "fail");
+});
+
+test("gate13 number-ledger: no ratio literals + empty ledger passes", () => {
+  const res = run(fullPage("<p>无数字</p>", ledger("")));
+  assert.equal(gate(res, "number-ledger").status, "pass", JSON.stringify(gate(res, "number-ledger")));
+});
+
+test("gate13 number-ledger: every N% / N倍 literal in body must appear in the ledger", () => {
+  const body = `<p>误报率约 3.1%，吞吐提升 17 倍，另有 1,000 倍差距</p>`;
+  const ok = ledger(
+    `<li data-kind="实算"><b>3.1%</b> — (1-e^{-kn/m})^k，k=7,n/m=1/10</li>
+     <li data-kind="出处"><b>17倍</b> — 论文表 2</li>
+     <li data-kind="估算"><b>1000 倍</b> — 示意量级</li>`,
+  );
+  assert.equal(gate(run(fullPage(body, ok)), "number-ledger").status, "pass", JSON.stringify(gate(run(fullPage(body, ok)), "number-ledger")));
+  const missing = ledger(`<li data-kind="实算"><b>3.1%</b> — 算式</li>`);
+  const res = run(fullPage(body, missing));
+  assert.equal(gate(res, "number-ledger").status, "fail");
+  assert.match(gate(res, "number-ledger").detail, /17倍/);
+});
+
+test("gate13 number-ledger: literals inside <script>/<style>/comments/attributes are not counted", () => {
+  const body = `<!-- 50% --><script>const x = "60%";</script><style>.a{width:70%}</style><div style="width:80%">文字</div>`;
+  assert.equal(gate(run(fullPage(body, ledger(""))), "number-ledger").status, "pass");
+});
+
+test("gate13 number-ledger: SVG <text> percentages count as body numbers", () => {
+  const body = `<svg viewBox="0 0 10 10"><text x="1" y="1">25%</text></svg>`;
+  assert.equal(gate(run(fullPage(body, ledger(""))), "number-ledger").status, "fail");
+  assert.equal(gate(run(fullPage(body, ledger(`<li data-kind="估算">25% — 示意</li>`))), "number-ledger").status, "pass");
+});
+
+test("gate13 number-ledger: modulo operator (95 % 3 = 2, column header '% 4') is not a percentage", () => {
+  const body = `<table><tr><th>% 3</th><th>% 4</th></tr><tr><td>95 % 3 = 2</td><td>95 % 4 = 3</td></tr></table><p>取模：95 % 3 = 2 而 95 % 4 = 3</p>`;
+  const res = run(fullPage(body, ledger("")));
+  assert.equal(gate(res, "number-ledger").status, "pass", JSON.stringify(gate(res, "number-ledger")));
+});
+
+test("gate13 number-ledger: a percentage in a table cell followed by a number in the next row still counts", () => {
+  const body = `<table><tr><td>5</td><td>≈ 9.2%</td></tr><tr><td>10</td><td>≈ 0.82%</td></tr></table>`;
+  const res = run(fullPage(body, ledger(`<li data-kind="实算">0.82% — 公式</li>`)));
+  assert.equal(gate(res, "number-ledger").status, "fail");
+  assert.match(gate(res, "number-ledger").detail, /9\.2%/);
+});
+
+test("gate13 number-ledger: entry with unknown or missing data-kind fails", () => {
+  const body = `<p>省 40%</p>`;
+  assert.equal(gate(run(fullPage(body, ledger(`<li data-kind="猜的">40% — x</li>`))), "number-ledger").status, "fail");
+  assert.equal(gate(run(fullPage(body, ledger(`<li>40% — x</li>`))), "number-ledger").status, "fail");
+});
+
+test("gate13 number-ledger: unfilled scaffold placeholder entry passes (scaffold stays green)", () => {
+  const res = run(fullPage("<p>无数字</p>", ledger(`<li data-kind="实算">（SLOT8: 数字 — 算式/出处/假设）</li>`)));
+  assert.equal(gate(res, "number-ledger").status, "pass");
 });
 
 test("governance: SIM_LABEL_WHITELIST exported as non-empty array of identifiers", async () => {

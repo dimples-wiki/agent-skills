@@ -583,10 +583,34 @@ code, .mono { font-family: var(--font-mono); font-size: .92em;
     </div>
   </section>
 
+  <!-- 数字账本（门 13）：正文每个 N% / N 倍 都要有条目；data-kind ∈ 实算 / 出处 / 估算。
+       本页刻意不给精确数字，账本用来说明"为什么不给"。 -->
+  <details class="ledger" data-ledger>
+    <summary>本页数字从哪来</summary>
+    <ul>
+      <li data-kind="估算"><b>「切成小块」的块长</b>正文未给具体字数：常见做法是几百字一块并有重叠，取值随资料类型与模型窗口变化，没有单一正确值，故本页不给数字。</li>
+      <li data-kind="估算"><b>「最相关的几块」</b>取几块（top-k）是工程参数，常见个位数到十几；本页流程图只示意「少量几块」，不承诺具体 k。</li>
+    </ul>
+  </details>
+
 </div>
 
 <style>
-/* [SCAFFOLD-STYLE] 自测块 —— 只用 var()，禁止改写（.hero-head 本页已在上方局部样式定义） */
+/* [SCAFFOLD-STYLE] 自测块 + 数字账本 —— 只用 var()，禁止改写（.hero-head 本页已在上方局部样式定义） */
+.ledger{margin-top:var(--sp-4);border-top:1px dashed var(--line-2);padding-top:var(--sp-2);
+  font-size:var(--fs-small);color:var(--t-2)}
+.ledger summary{cursor:pointer;font-weight:650;color:var(--t-2);list-style:none}
+.ledger summary::-webkit-details-marker{display:none}
+.ledger summary::before{content:"▸ ";color:var(--accent)}
+.ledger[open] summary::before{content:"▾ "}
+.ledger ul{margin:var(--sp-1) 0 0;padding:0;list-style:none}
+.ledger li{margin:.4em 0;line-height:1.5;padding-left:4.2em;position:relative}
+.ledger li::before{content:attr(data-kind);position:absolute;left:0;top:.15em;
+  font:650 .7rem/1.6 var(--font-sans);padding:0 .5em;border-radius:999px;
+  background:var(--surface);border:1px solid var(--line-2);color:var(--t-2)}
+.ledger li[data-kind="实算"]::before{color:var(--ok);border-color:var(--ok)}
+.ledger li[data-kind="估算"]::before{color:var(--warn);border-color:var(--warn)}
+.ledger b{color:var(--t-1);font-weight:650;margin-right:.4em}
 .quiz{scroll-margin-top:var(--sp-4)}
 .quiz-q{margin:var(--sp-2) 0 0;padding-left:1.4em;color:var(--t-1);font-size:var(--fs-body)}
 .quiz-q li{margin:.45em 0;line-height:1.55}

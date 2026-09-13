@@ -1,7 +1,7 @@
 // —— aha new：脚手架命令实现（基线结束后并入 src/cli.mjs / serve.mjs 旁）——
 // 设计要点：
-// 1. 骨架 = canonical tokens 逐字 + 工具条 + FOUC bootstrap + 引擎 + 七节空槽（第 7 层含自测块）
-// 2. 未填充状态即通过 12 门（样板永远绿，只有内容 Edit 能弄红）
+// 1. 骨架 = canonical tokens 逐字 + 工具条 + FOUC bootstrap + 引擎 + 七节空槽（第 7 层含自测块 + 数字账本）
+// 2. 未填充状态即通过 13 门（样板永远绿，只有内容 Edit 能弄红）
 // 3. 槽标记唯一（<!--SLOT:n-->），Edit 的 old_string 无歧义
 
 import { writeFileSync, existsSync } from "node:fs";
@@ -77,7 +77,8 @@ ${css}
     <p class="eyebrow" data-n="03">真实机制</p>
     <h2>（SLOT4: 标题）</h2>
     <!-- SLOT4: 大白话先行；流程配模拟器（下方 SIM_STEPS 填数据）；
-         核心机制必须有图形载体（SVG 取色 var()） -->
+         核心机制必须有图形载体（SVG 取色 var()）；
+         .sim-node 可按需增删（引擎遍历全部 [data-node]），data-node 值需唯一 -->
     <div class="sim" data-sim>
       <div class="sim-stage">
         <div class="sim-node" data-node="a"><span class="k">（中文标签）</span><span data-node-text>待命</span></div>
@@ -114,8 +115,8 @@ ${css}
     <p>（SLOT7: 一句话公式，关键词 <mark>mark</mark> 2-6 处）</p>
   </div>
 
-  <!-- SLOT7: 自测 —— 至少 2 问：① 针对第 3 层类比的失效点；② 让读者预测一个反例的结果。
-       答案 ≤80 字/问，默认折叠（门 12）。只改文字，不改 data-* 与 hidden。 -->
+  <!-- 第 7 层·自测块：至少 2 问：① 针对第 3 层类比的失效点；② 让读者预测一个反例的结果。
+       答案 ≤80 字/问，默认折叠（门 12）。只改 SLOT7 占位文字，不改 data-* 与 hidden；本注释可留。 -->
   <section class="section quiz" data-quiz>
     <p class="eyebrow" data-n="06">合上页面前</p>
     <h2>（SLOT7: 自测标题，如「两个问题」）</h2>
@@ -131,11 +132,37 @@ ${css}
     </div>
   </section>
 
+  <!-- 数字账本（门 13）：正文里每个 N% / N 倍 都要有一条；data-kind 只能是 实算 / 出处 / 估算 ——
+       实算 = 页内可复算，写算式；出处 = 外部来源，写名字；估算 = 示意值，写假设。
+       其他关键数字（时长、容量、次数）也建议入账。没有比例类数字则删掉全部 <li>、保留本块。 -->
+  <details class="ledger" data-ledger>
+    <summary>本页数字从哪来</summary>
+    <ul>
+      <li data-kind="实算"><b>（SLOT8: 数字）</b>（SLOT8: 算式，如 6 GB ÷ 360 MB ≈ 17）</li>
+      <li data-kind="出处"><b>（SLOT8: 数字）</b>（SLOT8: 来源名，如 Bloom 1970 论文表 1）</li>
+      <li data-kind="估算"><b>（SLOT8: 数字）</b>（SLOT8: 假设，如 按 4 节点均匀分布示意）</li>
+    </ul>
+  </details>
+
 </div>
 
 <style>
-/* [SCAFFOLD-STYLE] 脚手架局部样式（首屏头部 + 自测块）—— 只用 var()，禁止改写 */
+/* [SCAFFOLD-STYLE] 脚手架局部样式（首屏头部 + 自测块 + 数字账本）—— 只用 var()，禁止改写 */
 .hero-head{display:flex;align-items:flex-start;justify-content:space-between;gap:var(--sp-3);flex-wrap:wrap}
+.ledger{margin-top:var(--sp-4);border-top:1px dashed var(--line-2);padding-top:var(--sp-2);
+  font-size:var(--fs-small);color:var(--t-2)}
+.ledger summary{cursor:pointer;font-weight:650;color:var(--t-2);list-style:none}
+.ledger summary::-webkit-details-marker{display:none}
+.ledger summary::before{content:"▸ ";color:var(--accent)}
+.ledger[open] summary::before{content:"▾ "}
+.ledger ul{margin:var(--sp-1) 0 0;padding:0;list-style:none}
+.ledger li{margin:.4em 0;line-height:1.5;padding-left:4.2em;position:relative}
+.ledger li::before{content:attr(data-kind);position:absolute;left:0;top:.15em;
+  font:650 .7rem/1.6 var(--font-sans);padding:0 .5em;border-radius:999px;
+  background:var(--surface);border:1px solid var(--line-2);color:var(--t-2)}
+.ledger li[data-kind="实算"]::before{color:var(--ok);border-color:var(--ok)}
+.ledger li[data-kind="估算"]::before{color:var(--warn);border-color:var(--warn)}
+.ledger b{color:var(--t-1);font-weight:650;margin-right:.4em}
 .quiz{scroll-margin-top:var(--sp-4)}
 .quiz-q{margin:var(--sp-2) 0 0;padding-left:1.4em;color:var(--t-1);font-size:var(--fs-body)}
 .quiz-q li{margin:.45em 0;line-height:1.55}
@@ -165,7 +192,7 @@ ${css}
 
 <script>
 const SIM_STEPS = [
-  /* SLOT4: 步骤数据（旁白中文引号「“ ”」），不用模拟器则整段删除（含 [SIM-ENGINE]） */
+  /* （SLOT4: 步骤数据 —— 旁白中文引号「“ ”」；不用模拟器则整段删除，含 [SIM-ENGINE]） */
 ];
 const SIM_MS_PER_STEP = 2400;
 </script>
@@ -324,7 +351,7 @@ export function newCommand(slugArg, titleArg) {
   const title = titleArg ?? slug;
   writeFileSync(page, scaffoldHtml(title, slug));
   console.log(`脚手架已生成: ${page}`);
-  console.log(`  含: canonical tokens + 工具条 + 引擎 + 七节空槽（SLOT1-7，第 7 层含自测块）`);
+  console.log(`  含: canonical tokens + 工具条 + 引擎 + 七节空槽（SLOT1-7，第 7 层含自测块）+ 数字账本（SLOT8）`);
   console.log(`  下一步: 按内容分块 3-5 次 Edit 填内容（禁止整页 Write），完成后 aha check`);
   return page;
 }

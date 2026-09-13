@@ -1,6 +1,6 @@
 {
   "name": "@dimples/aha",
-  "version": "0.8.0",
+  "version": "0.9.0",
   "description": "CLI for the aha skill: quality gates (check), local server (serve) and Cloudflare quick-tunnel sharing (share) for generated explainer HTML pages.",
   "type": "module",
   "bin": {

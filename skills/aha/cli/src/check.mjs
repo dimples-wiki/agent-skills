@@ -1,5 +1,5 @@
 #!/usr/bin/env node
-// @dimples/aha · check —— 12 道静态质量门 + 回执
+// @dimples/aha · check —— 13 道静态质量门 + 回执
 //
 // 设计依据 docs/plans/2026-09-07-aha-design.md「质量与验证」：
 // 质量来自机器可检的门，不来自提示词（archify 教训）。
@@ -271,6 +271,45 @@ function runGates(rawHtml) {
     detail: quizProblems.length ? quizProblems.join("；") : undefined,
   });
 
+  // 13. number-ledger —— 完整页须带「数字账本」[data-ledger]：正文里每个比例类字面量
+  //     （N% / N倍，最容易"看起来像事实错误"的一类）都要在账本里有条目，每条标来源类型
+  //     data-kind ∈ 实算 / 出处 / 估算。依据 SKILL.md「数字纪律」：信誉押在每个数字经得起复算。
+  //     只扫读者可见文字：去注释 / script / style / 标签属性；SVG <text> 算正文。
+  //     已知取舍：不带 % 或"倍"的绝对数字（6 GB、95 分）不进门，由内容自检第 4 问约束。
+  const ledgerProblems = [];
+  if (hasTakeaway) {
+    const ledgerRe = /<(details|section|div)\b[^>]*\bdata-ledger\b[^>]*>([\s\S]*?)<\/\1>/i;
+    const ledgerMatch = html.match(ledgerRe);
+    if (!ledgerMatch) {
+      ledgerProblems.push("缺数字账本（[data-ledger]）：完整页须列出比例类数字的来源（实算/出处/估算）");
+    } else {
+      const visible = stripComments(html)
+        .replace(ledgerRe, "")
+        .replace(/<(script|style)\b[^>]*>[\s\S]*?<\/\1>/gi, "")
+        // 块 / 单元格边界换成分隔符，避免相邻单元格的数字拼成「9.2% 10」被当成取模
+        .replace(/<\/(td|th|li|p|tr|div|h[1-6]|dt|dd|section|caption|figcaption)>|<br\s*\/?>/gi, " | ")
+        .replace(/<[^>]+>/g, " ")
+        .replace(/&nbsp;/g, " ")
+        .replace(/\s+/g, " ");
+      // 「95 % 3 = 2」「% 4」是取模运算不是百分数：同一段文字里 % 后紧跟数字时不算
+      const literals = new Set(
+        [...visible.matchAll(/(\d[\d,]*(?:\.\d+)?) ?(%|％|倍)(?! ?\d)/g)].map((m) => `${m[1].replace(/,/g, "")}${m[2] === "％" ? "%" : m[2]}`),
+      );
+      const ledgerText = norm(stripComments(ledgerMatch[2]).replace(/<[^>]+>/g, " ")).replace(/,(?=\d)/g, "").replace(/％/g, "%");
+      const missing = [...literals].filter((lit) => !ledgerText.includes(lit));
+      if (missing.length) ledgerProblems.push(`账本缺条目：${missing.join("、")}（正文出现的比例类数字都要写来源）`);
+      const entries = [...ledgerMatch[2].matchAll(/<li\b([^>]*)>/gi)];
+      const badKinds = entries.filter((e) => !/\bdata-kind=["']?(实算|出处|估算)["']?/.test(e[1]));
+      if (badKinds.length) ledgerProblems.push(`${badKinds.length} 条账本条目缺 data-kind 或取值不在 实算/出处/估算 内`);
+      if (literals.size && !entries.length) ledgerProblems.push("正文有比例类数字，但账本为空");
+    }
+  }
+  gates.push({
+    id: "number-ledger",
+    status: ledgerProblems.length ? "fail" : "pass",
+    detail: ledgerProblems.length ? ledgerProblems.join("；") : undefined,
+  });
+
   return gates;
 }
 
@@ -301,6 +340,7 @@ export function checkFile(file) {
     console.log(`  ${mark} ${g.id}${g.detail ? ` —— ${g.detail}` : ""}`);
   }
   console.log(`check: ${res.passed}/${res.total} 门通过`);
-  console.log(`视觉验证: skipped (静态检查 only —— 浏览器验证由生成方完成)`);
+  // 与 SKILL.md「交付回执」逐字一致，生成方可直接复用这两行
+  console.log(`视觉验证: skipped（默认跳过；说「看效果」即可触发）`);
   process.exit(res.ok ? 0 : 1);
 }

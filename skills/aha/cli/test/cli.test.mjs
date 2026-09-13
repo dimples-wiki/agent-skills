@@ -76,6 +76,13 @@ test("aha new: scaffold passes all gates before any content fill", async () => {
   assert.ok(/data-quiz-answers[^>]*\bhidden\b/.test(html), "自测答案应默认 hidden");
   assert.ok(html.includes("[QUIZ-TOGGLE]"), "缺自测答案开关脚本");
   assert.ok(html.indexOf('class="takeaway"') < html.indexOf("data-quiz"), "自测块应在「记」之后");
+  // 数字账本（门 13）：骨架自带 [data-ledger]，占位条目 data-kind 合法，位于自测块之后
+  assert.ok(html.includes("data-ledger"), "缺数字账本 data-ledger");
+  assert.ok(html.indexOf("data-quiz") < html.indexOf("data-ledger"), "账本应在自测块之后");
+  assert.ok(/<li data-kind="(实算|出处|估算)">/.test(html), "账本占位条目应带合法 data-kind");
+  // 脚手架注释不得含 SLOT 关键字（SKILL 让生成方 grep「（SLOT」判残留；说明注释不应被误删）
+  const comments = [...html.matchAll(/<!--([\s\S]*?)-->/g)].map((m) => m[1]);
+  assert.deepEqual(comments.filter((c) => /（SLOT/.test(c)), [], "HTML 注释里不应出现「（SLOT」占位形式");
   assert.ok(html.includes("aha-design-tokens"), "缺 canonical tokens");
 });
 

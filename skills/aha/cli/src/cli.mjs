@@ -13,7 +13,7 @@ const VERSION = JSON.parse(readFileSync(new URL("../package.json", import.meta.u
 const HELP = `aha —— 概念图解页面的质量门 / 本地服务 / 公网分享
 
 用法:
-  aha check <file.html>      跑 12 道质量门，输出回执（非 0 退出码 = 有门未过）
+  aha check <file.html>      跑 13 道质量门，输出回执（非 0 退出码 = 有门未过）
   aha start [dir] [--port N] 后台守护启动（已运行则换血重启；日志 <页面目录>/.serve.log）
   aha stop  [dir] [--port N] 停止后台守护
   aha serve [dir] [--port N] 前台运行（调试用；默认走配置的页面目录，端口 ${DEFAULT_PORT}）
