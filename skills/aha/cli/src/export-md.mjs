@@ -56,7 +56,9 @@ export function extractMarkdown(html) {
     .replace(/<div class="share-pop"[^>]*>[\s\S]*?<\/div>\s*<\/div>/gi, "")
     .replace(/<div class="share-pop"[^>]*>[\s\S]*?<\/div>/gi, "")
     .replace(/<button\b[^>]*>[\s\S]*?<\/button>/gi, "")
-    .replace(/<span class="sim-progress"[^>]*>[^<]*<\/span>/gi, "");
+    .replace(/<span class="sim-progress"[^>]*>[^<]*<\/span>/gi, "")
+    // 新版第 7 层自测块:hidden 的答案区会摊平导出,先给一处「参考答案」标头分隔
+    .replace(/(<div\b[^>]*data-quiz-answers[^>]*>)/i, '$1<p><strong>参考答案</strong></p>');
 
   const out = [`# ${title}`, ""];
   let listStack = [];
@@ -140,9 +142,20 @@ export function extractMarkdown(html) {
       }
       case "details": {
         closeList();
+        const isLedger = /data-ledger/i.test(t); // 开标签上(数字账本:保留来源类型)
         const raw = collectRaw(tokens, i, "details");
         i = skipToClose(tokens, i, "details");
         const sum = inline(raw.match(/<summary[^>]*>([\s\S]*?)<\/summary>/i)?.[1] ?? "");
+        if (isLedger) {
+          if (sum) out.push(`**${sum}**`, "");
+          for (const li of raw.matchAll(/<li\b[^>]*>([\s\S]*?)<\/li>/gi)) {
+            const kind = li[0].match(/data-kind="([^"]*)"/i)?.[1] ?? "";
+            const text = inline(li[1]);
+            if (text) out.push(`- ${text}${kind ? `（${kind}）` : ""}`);
+          }
+          out.push("");
+          break;
+        }
         if (sum) out.push(`**${sum}**`, "");
         const rest = inline(raw.replace(/<summary[^>]*>[\s\S]*?<\/summary>/i, ""));
         if (rest) out.push(rest, "");
@@ -229,4 +242,4 @@ function skipToClose(tokens, startIdx, tag, selfOnly = false) {
   }
   return selfOnly ? tokens.length - 1 : startIdx;
 }
-/* upgrade-test-2 */
+

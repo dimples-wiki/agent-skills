@@ -57,6 +57,13 @@ const FINALIZE_SCRIPT = `<script>
     document.querySelectorAll("[data-fable-answers][hidden]").forEach(function(el){
       el.removeAttribute("hidden");
     });
+    // 自测块(第 7 层):展开答案、隐藏按钮 —— 与寓言答案区同款契约
+    document.querySelectorAll("[data-quiz-answers][hidden]").forEach(function(el){
+      el.removeAttribute("hidden");
+    });
+    document.querySelectorAll("[data-quiz-toggle]").forEach(function(btn){
+      btn.style.display = "none";
+    });
     var sims = document.querySelectorAll("[data-sim-next]");
     if (!sims.length) return settle();
     sims.forEach(function(btn){
