@@ -3,7 +3,7 @@ name: aha
 description: Use when the user wants to truly understand a concept rather than get a quick answer — triggers include "aha", "讲懂 X", "讲讲 X", "X 到底是什么 / 怎么工作的", "X 和 Y 有什么区别", or any request for a visual / diagram explanation. Produces a standalone HTML explainer page that builds a correct mental model. Not for one-line answers, expert-first deep dives, or rewriting existing documentation.
 license: ISC
 metadata:
-  version: 1.2.0
+  version: 1.3.2
   tags:
     - explanation
     - visualization
@@ -39,18 +39,19 @@ metadata:
 
 ## 七层骨架（固定，内容可取舍）
 
-每层的顺序、要求与常数都有学习科学依据，见 `references/theory.md`
+每层「为什么这样设计」的学习科学依据(先行组织者/结构映射/测试效应等)集中在
+`references/theory.md`(改层前必读;日常生成不读)
 （**改层、改顺序、改常数前必读**；日常生成不用读）。
 
-| # | 层 | 必须做到 | 依据 |
-|---|-----|----------|------|
-| 1 | 一句话核心 | 首屏：概念名 + 一句话说清 + 主视觉 + 起点徽章 | 先行组织者（Ausubel） |
-| 2 | 为什么存在 | before/after 对比：没有它时怎么办、痛点是什么 | 先感知问题再讲解（Schwartz & Bransford） |
-| 3 | 直觉 | 一个类比 + **失效边界**（不写失效点的类比不许上页） | 结构映射（Gentner）；单类比必误导（Spiro） |
-| 4 | 真实机制 | 大白话先行，术语后置且全文含义一致；**至少一个带真实值的具体实例**；核心机制有图形载体；流程类配**步骤模拟器** | 具体先于抽象（Bruner）；双重编码 + 分段（Paivio；Mayer）；样例效应（Sweller） |
-| 5 | 容易混淆 | 按"各自**改变什么**"对比 2-3 个邻居概念，每卡有"输出："行 | 变异理论（Marton） |
-| 6 | 边界与失败 | 失败模式配 1-2 字记忆标签（同页长度一致）；误区用三段式**「你可能以为 X → 其实 Y → 分界在 Z」** | 概念转变（Posner）；反驳式文本（Tippett） |
-| 7 | 记 + 自测 + 账本 | 一句话公式式收尾，关键词 `<mark>` 2-6 处，不引入新概念；随后 **2-3 个自测问题，答案默认折叠**（至少一问针对类比失效点、一问让读者预测反例结果）；页尾**数字账本**列出比例类数字的来源 | 测试效应（Roediger & Karpicke）；流畅度错觉（Bjork）；论证依据层（Toulmin） |
+| # | 层 | 必须做到 |
+|---|-----|----------|
+| 1 | 一句话核心 | 首屏：概念名 + 一句话说清 + 主视觉 + 起点徽章（只标级别） |
+| 2 | 为什么存在 | before/after 对比：没有它时怎么办、痛点是什么 |
+| 3 | 直觉 | 一个类比 + **失效边界**（不写失效点的类比不许上页） |
+| 4 | 真实机制 | 大白话先行，术语后置且全文含义一致；**至少一个带真实值的具体实例**；核心机制有图形载体；流程类配**步骤模拟器** |
+| 5 | 容易混淆 | 按"各自**改变什么**"对比 2-3 个邻居概念，每卡有"输出："行 |
+| 6 | 边界与失败 | 失败模式配 1-2 字记忆标签（同页长度一致）；误区用三段式**「你可能以为 X → 其实 Y → 分界在 Z」** |
+| 7 | 记 + 自测 + 账本 | 一句话公式式收尾，关键词 `<mark>` 2-6 处，不引入新概念；随后 **2-3 个自测问题，答案默认折叠**（至少一问针对类比失效点、一问让读者预测反例结果）；页尾**数字账本**列出比例类数字的来源 |
 
 **菜单，不是模板**：按主题取舍 —— 不是每层都要写满；某层对这个主题没价值
 就不写，但第 1、4、7 层永远要有。反过来，**不得为了凑层加没有解释价值的内容**。
@@ -65,8 +66,8 @@ metadata:
 
 **校准只调起点与类比选择，永不删层。** 判断错了，读者往下读一层就自愈；
 但砍掉内容是不可挽回的。用户显式指定受众时，覆盖一切信号。
-页首徽章透明标注，且**必须点明依据**（`起点 L2 · 有相邻背景：统计基础`
-`起点 L3 · 术语使用准确：hidden state`），L2 页同时点明桥接来源
+页首徽章只标级别（`起点 L1`）—— 依据一行放页脚小字（`起点依据：L2 · 提问带
+统计背景`），读者首屏不被校准元信息打扰。L2 页在类比处点明桥接来源
 （pill："桥接自：Rust 所有权" —— 不写"你熟悉的"，页面会被分享给其他读者）。
 
 ## 关键契约
@@ -101,6 +102,9 @@ D↔E 成环从根走不到）。大白话降低语言门槛，实例才让抽�
 | 状态变化 | 状态图或有意义的动画 |
 | 连续场 / 波 / 流 | 静态 SVG 示意；（选配）vgpu 展示层 |
 
+**规模上限**（防内容过载，拖慢生成且不加分）：模拟器 **4-6 步**、
+SVG 节点 ≤ 12、对比卡 ≤ 3、账本条目 ≤ 6、自测 2-3 问 —— 超额即删减。
+
 **大图少字**：每节一个视觉中心；文字只留标题、关键标签、必要解释与边界。
 **禁止把长篇正文拆成多个文字卡片伪装成视觉化。**
 第 4 层的核心机制（对象图 / 交换过程 / 混合过程）至少要有一个图形载体 ——
@@ -117,7 +121,8 @@ D↔E 成环从根走不到）。大白话降低语言门槛，实例才让抽�
 **形式硬规则**：
 - 单文件自包含，渲染零远程依赖（tokens/引擎/工具条/自测块/账本已由 CLI 注入）
 - 取色只能 `var(--token)`，tokens 块外禁止 hex/rgb/hsl；
-  SVG 取色 `var(--cat-a/b/c)` / `var(--accent)` / `var(--warn)` / `var(--ok)`
+  SVG 取色 `var(--cat-a/b/c)` / `var(--accent)` / `var(--warn)` / `var(--ok)` /
+`var(--t-1/2/3)`（文字）/ `var(--line)`、`var(--line-2)`（线框）
 - **页面局部布局样式允许且常需要**（before/after 网格、手算表、SVG 尺寸等）：
   集中放在 `<head>` 里一个新增的 `<style>`，只用 `var()`；不改 tokens 块，
   不改 `[SCAFFOLD-STYLE]`。tokens 已提供的类（`.card .callout .compare
@@ -144,10 +149,8 @@ skill 是旧版，先执行输出里给的升级命令（`npx skills add ...`，
 ```bash
 npx @dimples/aha new <slug> "<概念名>"
 ```
-
-```bash
-npx @dimples/aha new <slug> "<概念名>"
-```
+标题参数决定脚手架 `lang`：概念名是纯英文而用户说中文时，
+传 `"<英文名>（<中文名>）"`（如 `WebGL（网页图形库）`），免得后补一次 lang 修正。
 
 若命令退出并输出"存储位置选择"（仅 Windows 首次/存量用户会出现）：
 把给出的选项**转述给用户**，按其选择执行对应的 `aha config ...` 命令，
@@ -159,23 +162,24 @@ npx @dimples/aha new <slug> "<概念名>"
 （实测：探索过的一律显著更慢；唯一例外是选配模式按 `references/modes.md` 明示的文件）。
 读取**刚生成的页面本身**不受此限 —— Edit 需要精确的 old_string，读它是必需的。
 
-### Step 2 · 3-5 次 Edit 填完全部内容
+### Step 2 · 分块 Edit 填完全部内容
 
 动笔前先定界（默想一行，不进页面）：**本页讲 X 的 A/B/C，不讲 D** ——
-它同时是第 6 层「边界」的素材。随后校准起点（见上节），用 **3-5 次 Edit**
-填完（按内容分块，不逐槽反复小改）：① `<head>` 新增一个页面局部 `<style>`；
-② 起点徽章 `起点 L1 · （依据）` + 容器内七槽正文 + 自测块 + 账本条目
+它同时是第 6 层「边界」的素材。随后校准起点（见上节），按内容自然分块、**建议 4-6 次 Edit**
+填完（不逐槽小改，也不必为凑次数硬合并）：① `<head>` 新增一个页面局部 `<style>`；
+② 起点徽章 `起点 L1` + 页脚 `起点依据：…` + 容器内七槽正文 + 自测块 + 账本条目
 （从 `（SLOT1:` 到 `（SLOT8:`，约 200 行，可拆成两次）；③ `SIM_STEPS` 步骤数据。
+脚手架按标题语言判定 `lang` —— 英文标题配中文内容时，把 `lang` 改对并入上面任意一次 Edit，不单开一步。
 `[SCAFFOLD-STYLE]` / `[QUIZ-TOGGLE]` / `[SIM-ENGINE]` / `[TOOLBAR]` 四段
 **原样保留，不进 Edit 范围**；脚手架的说明注释可留可删，不影响门。
-填完 grep 一次页面，确认不再有 `（SLOT` / `（依据）` / `（中文标签）` 字样。
+填完 grep 一次页面，确认不再有 `（SLOT` / `（中文标签）` 字样。
 内容约束见上方「七层骨架」「关键契约」—— 不要读 reference.html。
 
 ### 内容自检（Step 2 写完 → Step 3 之前，7 个是/否，不需要工具）
 
 讲不清的地方就是知识漏洞 —— 补齐再交付，哪条答不上就回资料补哪条：
 
-1. 第 4 层每个关键术语，我都能用一句大白话说出它「做了什么」？
+1. 第 4 层每个关键术语，我都能用一句大白话说出它「做了什么」？图里的每条连线/箭头，与机制里的指向一一对应？
 2. 第 4 层有至少一个带真实值的具体实例，而不只有抽象描述？
 3. 每个类比的失效点里，至少一条指向了类比掩盖的**真实机制**？
 4. 页面里每个精确数字，我都复算过或有出处，并且比例类数字已入账本？
@@ -261,7 +265,7 @@ The Chinese sections above are the contract; this is only the command sheet.
    the number ledger). **Read nothing else** (no ls/grep of the skill dir, no
    assets/references/cli).
 2. Decide page scope (covers / doesn't cover), calibrate L1/L2/L3 from the
-   user's phrasing, fill badge + slots + ledger entries + `SIM_STEPS` in **3-5 Edits**
+   user's phrasing, fill badge + slots + ledger entries + `SIM_STEPS` in **4-6 Edits**
    (~220 lines, colors only via `var(--token)`, page-local layout CSS allowed
    in one `<style>`), grep that no `（SLOT` placeholder remains, then answer the
    7 content self-check questions.

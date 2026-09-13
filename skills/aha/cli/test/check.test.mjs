@@ -366,7 +366,7 @@ test("gate13 number-ledger: every N% / N倍 literal in body must appear in the l
   const missing = ledger(`<li data-kind="实算"><b>3.1%</b> — 算式</li>`);
   const res = run(fullPage(body, missing));
   assert.equal(gate(res, "number-ledger").status, "fail");
-  assert.match(gate(res, "number-ledger").detail, /17倍/);
+  assert.match(gate(res, "number-ledger").detail, /17\(倍\)/);
 });
 
 test("gate13 number-ledger: literals inside <script>/<style>/comments/attributes are not counted", () => {
@@ -408,4 +408,20 @@ test("governance: SIM_LABEL_WHITELIST exported as non-empty array of identifiers
   const { SIM_LABEL_WHITELIST } = await import("../src/check.mjs");
   assert.ok(Array.isArray(SIM_LABEL_WHITELIST) && SIM_LABEL_WHITELIST.length >= 5);
   for (const w of SIM_LABEL_WHITELIST) assert.ok(/^[A-Z][A-Za-z0-9·ᵀ]*$/.test(w), `白名单应为大写开头的标识符: ${w}`);
+});
+
+// 倍/×N 写法归一(R1:正文「N 倍」账本写「×N」曾致误报)
+test("gate13 number-ledger: N倍 in body covered by ×N wording in ledger", () => {
+  const body = `<p>请求量变 10 倍,缓存收益才明显</p>`;
+  const led = ledger(`<li data-kind="估算"><b>×10</b> — 量级示意</li>`);
+  const res = run(fullPage(body, led));
+  assert.equal(gate(res, "number-ledger").status, "pass", JSON.stringify(gate(res, "number-ledger")));
+});
+
+test("gate13 number-ledger: ×N in body also requires a ledger entry", () => {
+  const body = `<p>并发 ×8 时吞吐见顶</p>`;
+  const res = run(fullPage(body, ledger("")));
+  assert.equal(gate(res, "number-ledger").status, "fail");
+  assert.match(gate(res, "number-ledger").detail, /8/);
+  assert.equal(gate(run(fullPage(body, ledger(`<li data-kind="实算"><b>8 并发</b> — 压测</li>`))), "number-ledger").status, "pass");
 });

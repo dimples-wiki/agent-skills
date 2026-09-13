@@ -292,16 +292,25 @@ function runGates(rawHtml) {
         .replace(/&nbsp;/g, " ")
         .replace(/\s+/g, " ");
       // 「95 % 3 = 2」「% 4」是取模运算不是百分数：同一段文字里 % 后紧跟数字时不算
-      const literals = new Set(
-        [...visible.matchAll(/(\d[\d,]*(?:\.\d+)?) ?(%|％|倍)(?! ?\d)/g)].map((m) => `${m[1].replace(/,/g, "")}${m[2] === "％" ? "%" : m[2]}`),
+      // 倍类归一：「N 倍」与「×N」是同一件事的两种写法(正文/账本各写一种曾致误报),
+      // 统一按数字本身匹配账本;% 类仍带 % 精确匹配
+      const pctLits = [...visible.matchAll(/(\d[\d,]*(?:\.\d+)?) ?(%|％)(?! ?\d)/g)].map(
+        (m) => `${m[1].replace(/,/g, "")}${m[2] === "％" ? "%" : "%"}`,
       );
+      const multLits = [
+        ...visible.matchAll(/(\d[\d,]*(?:\.\d+)?) ?倍(?!\d)/g),
+        ...visible.matchAll(/[×✕]\s?(\d[\d,]*(?:\.\d+)?)/g),
+      ].map((m) => m[1].replace(/,/g, ""));
       const ledgerText = norm(stripComments(ledgerMatch[2]).replace(/<[^>]+>/g, " ")).replace(/,(?=\d)/g, "").replace(/％/g, "%");
-      const missing = [...literals].filter((lit) => !ledgerText.includes(lit));
+      const missing = [
+        ...pctLits.filter((lit) => !ledgerText.includes(lit)).map((lit) => `${lit}(百分比)`),
+        ...[...new Set(multLits)].filter((k) => !ledgerText.includes(k)).map((k) => `${k}(倍)`),
+      ];
       if (missing.length) ledgerProblems.push(`账本缺条目：${missing.join("、")}（正文出现的比例类数字都要写来源）`);
       const entries = [...ledgerMatch[2].matchAll(/<li\b([^>]*)>/gi)];
       const badKinds = entries.filter((e) => !/\bdata-kind=["']?(实算|出处|估算)["']?/.test(e[1]));
       if (badKinds.length) ledgerProblems.push(`${badKinds.length} 条账本条目缺 data-kind 或取值不在 实算/出处/估算 内`);
-      if (literals.size && !entries.length) ledgerProblems.push("正文有比例类数字，但账本为空");
+      if ((pctLits.length || multLits.length) && !entries.length) ledgerProblems.push("正文有比例类数字，但账本为空");
     }
   }
   gates.push({

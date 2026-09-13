@@ -46,7 +46,7 @@ ${css}
     <p class="eyebrow">aha · 概念图解</p>
     <div class="hero-head">
       <h1 class="display">${title}</h1>
-      <span class="badge">起点 L1 · （依据）</span>
+      <span class="badge">起点 L1</span>
     </div>
     <p class="lead"><strong>（SLOT1: 一句话说清）</strong></p>
     <div class="pipe" role="img" aria-label="（SLOT1: 主视觉链路 aria 描述）">
@@ -131,6 +131,8 @@ ${css}
       <p><strong>2）</strong>（SLOT7: 答案 2）</p>
     </div>
   </section>
+
+  <p class="t-3">起点依据：（SLOT1: Lx · 一句证据，如「纯白话提问」）</p>
 
   <!-- 数字账本（门 13）：正文里每个 N% / N 倍 都要有一条；data-kind 只能是 实算 / 出处 / 估算 ——
        实算 = 页内可复算，写算式；出处 = 外部来源，写名字；估算 = 示意值，写假设。
@@ -354,7 +356,7 @@ export function newCommand(slugArg, titleArg) {
   console.error(`配套 skill 版本 ${SKILL_VERSION} —— 你读到的 SKILL.md 若低于此,先执行 ${SKILL_UPGRADE_CMD} 升级并重读 SKILL.md,再继续本次生成`);
   console.log(`脚手架已生成: ${page}`);
   console.log(`  含: canonical tokens + 工具条 + 引擎 + 七节空槽（SLOT1-7，第 7 层含自测块）+ 数字账本（SLOT8）`);
-  console.log(`  下一步: 按内容分块 3-5 次 Edit 填内容（禁止整页 Write），完成后 aha check`);
+  console.log(`  下一步: 按内容自然分块 4-6 次 Edit 填内容（禁止整页 Write），完成后 aha check`);
   return page;
 }
 
