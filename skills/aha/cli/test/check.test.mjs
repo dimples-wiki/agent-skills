@@ -36,11 +36,11 @@ const goodPage = `<!DOCTYPE html>
 const gate = (res, id) => res.gates.find((g) => g.id === id);
 const run = (html) => checkHtml(html);
 
-test("good page: 11/11 gates pass", () => {
+test("good page: 12/12 gates pass", () => {
   const res = run(goodPage);
   assert.equal(res.ok, true);
-  assert.equal(res.passed, 11);
-  assert.equal(res.total, 11);
+  assert.equal(res.passed, 12);
+  assert.equal(res.total, 12);
 });
 
 test("single-h1: two h1 fails", () => {
@@ -123,7 +123,7 @@ test("script-syntax: valid module import does not false-fail", () => {
 
 test("receipt shape: has gate list, counts, exit-ok flag", () => {
   const res = run(goodPage);
-  assert.equal(res.gates.length, 11);
+  assert.equal(res.gates.length, 12);
   for (const g of res.gates) assert.ok(["pass", "fail"].includes(g.status));
   assert.equal(res.ok, true);
 });
@@ -286,6 +286,52 @@ test("final polish: font-family string exempt; unquoted class forms caught", () 
 test("micro-FP: data-class attribute is not class", () => {
   const a = run(goodPage.replace("<h2>节</h2>", '<div data-class="tag">超长内容示意</div>'));
   assert.equal(gate(a, "fail-tag-consistency").status, "pass");
+});
+
+// —— 门 12：自测块（检索练习）——
+// 依据 references/theory.md 第 7 层：测试效应（Roediger & Karpicke 2006）——
+// 有「记」层的完整图解页必须带 ≥2 个自测问题，答案默认折叠（读者先答后看）。
+const quizOk = `<section class="section quiz" data-quiz>
+  <h2>合上页面前</h2>
+  <ol class="quiz-q"><li>问题一</li><li>问题二</li></ol>
+  <button type="button" class="quiz-toggle" data-quiz-toggle aria-expanded="false" aria-controls="quiz-answers">查看答案</button>
+  <div class="quiz-ans" id="quiz-answers" data-quiz-answers hidden><p>答一</p><p>答二</p></div>
+</section>`;
+const withTakeaway = (quiz) =>
+  goodPage.replace("<h3>小节</h3>", `<h3>小节</h3>\n<div class="takeaway"><p><mark>记</mark>住</p></div>\n${quiz}`);
+
+test("gate12 self-test: page without takeaway is exempt (component demos / partial pages)", () => {
+  assert.equal(gate(run(goodPage), "self-test").status, "pass");
+});
+
+test("gate12 self-test: takeaway without quiz block fails", () => {
+  const res = run(withTakeaway(""));
+  assert.equal(gate(res, "self-test").status, "fail");
+});
+
+test("gate12 self-test: takeaway + quiz (≥2 questions, answers hidden) passes", () => {
+  const res = run(withTakeaway(quizOk));
+  assert.equal(gate(res, "self-test").status, "pass", JSON.stringify(gate(res, "self-test")));
+});
+
+test("gate12 self-test: only one question fails", () => {
+  const res = run(withTakeaway(quizOk.replace("<li>问题二</li>", "")));
+  assert.equal(gate(res, "self-test").status, "fail");
+});
+
+test("gate12 self-test: answers not hidden by default fails (reader must answer first)", () => {
+  const res = run(withTakeaway(quizOk.replace("data-quiz-answers hidden", "data-quiz-answers")));
+  assert.equal(gate(res, "self-test").status, "fail");
+});
+
+test("gate12 self-test: quiz block without answers container fails", () => {
+  const res = run(withTakeaway(quizOk.replace(/<div class="quiz-ans"[\s\S]*?<\/div>/, "")));
+  assert.equal(gate(res, "self-test").status, "fail");
+});
+
+test("gate12 self-test: takeaway mentioned only in CSS is not a takeaway block", () => {
+  const res = run(goodPage.replace(".hero { border-color: var(--accent); }", ".takeaway { border-color: var(--accent); }"));
+  assert.equal(gate(res, "self-test").status, "pass");
 });
 
 test("governance: SIM_LABEL_WHITELIST exported as non-empty array of identifiers", async () => {

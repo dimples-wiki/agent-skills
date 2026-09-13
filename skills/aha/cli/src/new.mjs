@@ -1,7 +1,7 @@
 // —— aha new：脚手架命令实现（基线结束后并入 src/cli.mjs / serve.mjs 旁）——
 // 设计要点：
-// 1. 骨架 = canonical tokens 逐字 + 工具条 + FOUC bootstrap + 引擎 + 七节空槽
-// 2. 未填充状态即通过 11 门（样板永远绿，只有内容 Edit 能弄红）
+// 1. 骨架 = canonical tokens 逐字 + 工具条 + FOUC bootstrap + 引擎 + 七节空槽（第 7 层含自测块）
+// 2. 未填充状态即通过 12 门（样板永远绿，只有内容 Edit 能弄红）
 // 3. 槽标记唯一（<!--SLOT:n-->），Edit 的 old_string 无歧义
 
 import { writeFileSync, existsSync } from "node:fs";
@@ -50,11 +50,11 @@ ${css}
     </div>
     <p class="lead"><strong>（SLOT1: 一句话说清）</strong></p>
     <div class="pipe" role="img" aria-label="（SLOT1: 主视觉链路 aria 描述）">
-      <div class="hp"><b>（SLOT1）</b><span></span></div>
+      <div class="p"><b>（SLOT1）</b><span></span></div>
       <span class="arrow" aria-hidden="true">→</span>
-      <div class="hp"><b>（SLOT1）</b><span></span></div>
+      <div class="p"><b>（SLOT1）</b><span></span></div>
       <span class="arrow" aria-hidden="true">→</span>
-      <div class="hp"><b>（SLOT1）</b><span></span></div>
+      <div class="p"><b>（SLOT1）</b><span></span></div>
     </div>
   </header>
 
@@ -109,12 +109,59 @@ ${css}
     <!-- SLOT6: .fails 一字标签 + 误区 .callout-warn + 适用 .callout-ok -->
   </section>
 
-  <!-- ===== 第 7 层：记 ===== -->
+  <!-- ===== 第 7 层：记 + 自测 ===== -->
   <div class="takeaway">
     <p>（SLOT7: 一句话公式，关键词 <mark>mark</mark> 2-6 处）</p>
   </div>
 
+  <!-- SLOT7: 自测 —— 至少 2 问：① 针对第 3 层类比的失效点；② 让读者预测一个反例的结果。
+       答案 ≤80 字/问，默认折叠（门 12）。只改文字，不改 data-* 与 hidden。 -->
+  <section class="section quiz" data-quiz>
+    <p class="eyebrow" data-n="06">合上页面前</p>
+    <h2>（SLOT7: 自测标题，如「两个问题」）</h2>
+    <ol class="quiz-q">
+      <li>（SLOT7: 问题 1 —— 类比在哪里失效？为什么？）</li>
+      <li>（SLOT7: 问题 2 —— 如果……会怎样？）</li>
+    </ol>
+    <button type="button" class="quiz-toggle" data-quiz-toggle
+            aria-expanded="false" aria-controls="quiz-answers">查看答案</button>
+    <div class="quiz-ans" id="quiz-answers" data-quiz-answers hidden>
+      <p><strong>1）</strong>（SLOT7: 答案 1）</p>
+      <p><strong>2）</strong>（SLOT7: 答案 2）</p>
+    </div>
+  </section>
+
 </div>
+
+<style>
+/* [SCAFFOLD-STYLE] 脚手架局部样式（首屏头部 + 自测块）—— 只用 var()，禁止改写 */
+.hero-head{display:flex;align-items:flex-start;justify-content:space-between;gap:var(--sp-3);flex-wrap:wrap}
+.quiz{scroll-margin-top:var(--sp-4)}
+.quiz-q{margin:var(--sp-2) 0 0;padding-left:1.4em;color:var(--t-1);font-size:var(--fs-body)}
+.quiz-q li{margin:.45em 0;line-height:1.55}
+.quiz-toggle{font:650 .85rem/1 var(--font-sans);cursor:pointer;color:var(--t-2);
+  background:var(--surface);border:1px solid var(--line-2);border-radius:999px;
+  padding:.55em 1.3em;margin-top:var(--sp-2);transition:border-color .2s,color .2s}
+.quiz-toggle:hover{color:var(--t-1);border-color:var(--accent)}
+.quiz-toggle:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
+.quiz-ans{margin-top:var(--sp-2);border-left:3px solid var(--accent);
+  background:var(--accent-soft);border-radius:0 var(--r-m) var(--r-m) 0;
+  padding:var(--sp-2) var(--sp-3);font-size:var(--fs-small);color:var(--t-2)}
+</style>
+<script>
+/* [QUIZ-TOGGLE] 自测答案开关 —— 禁止修改 */
+(() => {
+  const btn = document.querySelector("[data-quiz-toggle]");
+  const ans = document.querySelector("[data-quiz-answers]");
+  if (!btn || !ans) return;
+  btn.addEventListener("click", () => {
+    const show = ans.hidden;
+    ans.hidden = !show;
+    btn.setAttribute("aria-expanded", String(show));
+    btn.textContent = show ? "收起答案" : "查看答案";
+  });
+})();
+</script>
 
 <script>
 const SIM_STEPS = [
@@ -277,8 +324,8 @@ export function newCommand(slugArg, titleArg) {
   const title = titleArg ?? slug;
   writeFileSync(page, scaffoldHtml(title, slug));
   console.log(`脚手架已生成: ${page}`);
-  console.log(`  含: canonical tokens + 工具条 + 引擎 + 七节空槽（SLOT1-7）`);
-  console.log(`  下一步: 逐槽 Edit 填内容（禁止整页 Write），完成后 aha check`);
+  console.log(`  含: canonical tokens + 工具条 + 引擎 + 七节空槽（SLOT1-7，第 7 层含自测块）`);
+  console.log(`  下一步: 按内容分块 3-5 次 Edit 填内容（禁止整页 Write），完成后 aha check`);
   return page;
 }
 

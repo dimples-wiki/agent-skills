@@ -71,7 +71,29 @@ test("aha new: scaffold passes all gates before any content fill", async () => {
   }
   assert.ok(html.includes("[SIM-ENGINE]"), "缺引擎");
   assert.ok(html.includes("[TOOLBAR]"), "缺工具条");
+  // 第 7 层自测块（门 12）：骨架自带 ≥2 问 + 折叠答案 + 开关脚本
+  assert.ok(html.includes("data-quiz"), "缺自测块 data-quiz");
+  assert.ok(/data-quiz-answers[^>]*\bhidden\b/.test(html), "自测答案应默认 hidden");
+  assert.ok(html.includes("[QUIZ-TOGGLE]"), "缺自测答案开关脚本");
+  assert.ok(html.indexOf('class="takeaway"') < html.indexOf("data-quiz"), "自测块应在「记」之后");
   assert.ok(html.includes("aha-design-tokens"), "缺 canonical tokens");
+});
+
+test("aha new: every class in the scaffold is defined (tokens CSS or scaffold's own <style>)", async () => {
+  // 守卫"模板里的类在 CSS 里不存在"这类静默 bug（曾出现 .hp / .hero-head 未定义）。
+  // 门 7 只锁 c-/t-/sim 前缀（锁美学、放布局），布局类靠这条测试守。
+  const { scaffoldHtml } = await import("../src/new.mjs");
+  const html = scaffoldHtml("测试概念", "test-concept");
+  const tokens = readFileSync(new URL("../../assets/design-tokens.css", import.meta.url), "utf8");
+  const inlineCss = [...html.matchAll(/<style\b[^>]*>([\s\S]*?)<\/style>/gi)].map((m) => m[1]).join("\n");
+  const css = tokens + "\n" + inlineCss;
+  const used = new Set(
+    [...html.matchAll(/class=(?:"([^"]*)"|'([^']*)')/g)].flatMap((m) => (m[1] ?? m[2]).split(/\s+/)).filter(Boolean)
+  );
+  const undefinedClasses = [...used]
+    .filter((c) => !/^is-/.test(c)) // is-* 状态类由引擎运行时添加
+    .filter((c) => !new RegExp(`\\.${c.replace(/[-]/g, "\\-")}(?![\\w-])`).test(css));
+  assert.deepEqual(undefinedClasses, [], `脚手架用了未定义的类: ${undefinedClasses.join(", ")}`);
 });
 
 test("-v / --version prints package.json version", () => {

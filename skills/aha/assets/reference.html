@@ -561,13 +561,58 @@ code, .mono { font-family: var(--font-mono); font-size: .92em;
     </div>
   </section>
 
-  <!-- ===== 第 7 层：记 ===== -->
+  <!-- ===== 第 7 层：记 + 自测 ===== -->
   <div class="takeaway">
     <p><mark>RAG</mark> = 先<mark>检索</mark>相关资料，再把资料和问题一起交给模型生成回答。
     它改的是这一次的输入，不是模型本身。</p>
   </div>
 
+  <!-- 自测块（门 12）：≥2 问，① 针对类比失效点 ② 反例预测；答案默认折叠 -->
+  <section class="section quiz" data-quiz>
+    <p class="eyebrow" data-n="06">合上页面前</p>
+    <h2>两个问题</h2>
+    <ol class="quiz-q">
+      <li>「开卷考试」的类比在哪里失效？考生翻书时会自己判断哪页有用，RAG 里对应的那一步是谁在做、可能怎么错？</li>
+      <li>如果把同一个问题问两遍，中间只更新了资料库里的一条制度、模型权重不动 —— 两次回答会不会不同？为什么？</li>
+    </ol>
+    <button type="button" class="quiz-toggle" data-quiz-toggle
+            aria-expanded="false" aria-controls="quiz-answers">查看答案</button>
+    <div class="quiz-ans" id="quiz-answers" data-quiz-answers hidden>
+      <p><strong>1）</strong>「判断哪页有用」在 RAG 里是检索器按向量相似度做的，不是模型本身 —— 相似不等于相关，所以会「错页」：拿到语义相近却答不上问题的资料，模型照样作答。</p>
+      <p><strong>2）</strong>会不同。RAG 改的是每次的输入：资料库更新后，检索到的块变了，拼进提示词的内容随之变化；模型权重没动，但它这一次「看到」的资料已经不同。</p>
+    </div>
+  </section>
+
 </div>
+
+<style>
+/* [SCAFFOLD-STYLE] 自测块 —— 只用 var()，禁止改写（.hero-head 本页已在上方局部样式定义） */
+.quiz{scroll-margin-top:var(--sp-4)}
+.quiz-q{margin:var(--sp-2) 0 0;padding-left:1.4em;color:var(--t-1);font-size:var(--fs-body)}
+.quiz-q li{margin:.45em 0;line-height:1.55}
+.quiz-toggle{font:650 .85rem/1 var(--font-sans);cursor:pointer;color:var(--t-2);
+  background:var(--surface);border:1px solid var(--line-2);border-radius:999px;
+  padding:.55em 1.3em;margin-top:var(--sp-2);transition:border-color .2s,color .2s}
+.quiz-toggle:hover{color:var(--t-1);border-color:var(--accent)}
+.quiz-toggle:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
+.quiz-ans{margin-top:var(--sp-2);border-left:3px solid var(--accent);
+  background:var(--accent-soft);border-radius:0 var(--r-m) var(--r-m) 0;
+  padding:var(--sp-2) var(--sp-3);font-size:var(--fs-small);color:var(--t-2)}
+</style>
+<script>
+/* [QUIZ-TOGGLE] 自测答案开关 —— 禁止修改 */
+(() => {
+  const btn = document.querySelector("[data-quiz-toggle]");
+  const ans = document.querySelector("[data-quiz-answers]");
+  if (!btn || !ans) return;
+  btn.addEventListener("click", () => {
+    const show = ans.hidden;
+    ans.hidden = !show;
+    btn.setAttribute("aria-expanded", String(show));
+    btn.textContent = show ? "收起答案" : "查看答案";
+  });
+})();
+</script>
 
 
 <!-- ===== 步骤模拟器（引擎原样来自 assets/simulator.html） ===== -->

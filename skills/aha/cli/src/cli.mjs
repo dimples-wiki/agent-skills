@@ -13,7 +13,7 @@ const VERSION = JSON.parse(readFileSync(new URL("../package.json", import.meta.u
 const HELP = `aha —— 概念图解页面的质量门 / 本地服务 / 公网分享
 
 用法:
-  aha check <file.html>      跑 11 道质量门，输出回执（非 0 退出码 = 有门未过）
+  aha check <file.html>      跑 12 道质量门，输出回执（非 0 退出码 = 有门未过）
   aha start [dir] [--port N] 后台守护启动（已运行则换血重启；日志 <页面目录>/.serve.log）
   aha stop  [dir] [--port N] 停止后台守护
   aha serve [dir] [--port N] 前台运行（调试用；默认走配置的页面目录，端口 ${DEFAULT_PORT}）
@@ -133,8 +133,9 @@ if (invokedAsScript) {
 /** aha start：幂等后台守护 + 书架回执（skill 交付时引用这两行输出） */
 export async function startCommand(dirArg, opts = {}) {
   const r = await startDaemon({ dir: dirArg, port: opts.port });
-  console.log(r.reused    ? `aha serve 已在运行（pid ${r.pid}），复用`
-    : `aha serve 已在后台运行（pid ${r.pid}，日志 ${r.dir}/.serve.log）`);
+  console.log(!r.reused   ? `aha serve 已在后台运行（pid ${r.pid}，日志 ${r.dir}/.serve.log）`
+    : r.pid > 0           ? `aha serve 已在运行（pid ${r.pid}），复用`
+    :                       `端口 ${r.port} 上已有 aha serve（非本工具拉起的守护），直接复用`);
   console.log(`  书架 http://127.0.0.1:${r.port} · ${r.count} 篇`);
 }
 

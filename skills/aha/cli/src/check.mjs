@@ -1,5 +1,5 @@
 #!/usr/bin/env node
-// @dimples/aha · check —— 11 道静态质量门 + 回执
+// @dimples/aha · check —— 12 道静态质量门 + 回执
 //
 // 设计依据 docs/plans/2026-09-07-aha-design.md「质量与验证」：
 // 质量来自机器可检的门，不来自提示词（archify 教训）。
@@ -242,6 +242,33 @@ function runGates(rawHtml) {
     id: "sim-label-lang",
     status: badLabels.length ? "fail" : "pass",
     detail: badLabels.length ? `中文页的模拟器标签须中文（专有标识符除外）：${badLabels.join(", ")}` : undefined,
+  });
+
+  // 12. self-test —— 有「记」层（class 含 takeaway）的完整图解页必须带自测块：
+  //     ≥2 个问题 + 答案容器默认 hidden（读者先答后看）。
+  //     依据 references/theory.md 第 7 层：测试效应（主动回忆 > 重读）与
+  //     流畅度错觉（排版越顺滑越需要一处让读者"卡一下"）。
+  //     只在 class 属性里找 takeaway：tokens CSS 里的 .takeaway 选择器不算（组件演示页免检）。
+  const classTokens = attrValues(html, "class").flatMap((v) => v.split(/\s+/));
+  const hasTakeaway = classTokens.includes("takeaway");
+  const quizProblems = [];
+  if (hasTakeaway) {
+    const quiz = html.match(/<(section|div)\b[^>]*\bdata-quiz\b[^>]*>([\s\S]*?)<\/\1>/i);
+    if (!quiz) {
+      quizProblems.push("缺自测块（[data-quiz]）：「记」之后须有 ≥2 个自测问题，答案默认折叠");
+    } else {
+      const body = quiz[2];
+      const qCount = (body.match(/<li[\s>]/gi) ?? []).length;
+      if (qCount < 2) quizProblems.push(`自测问题只有 ${qCount} 个，至少 2 个（一问类比失效点，一问反例预测）`);
+      const ansTag = body.match(/<[a-z]+\b[^>]*\bdata-quiz-answers\b[^>]*>/i)?.[0];
+      if (!ansTag) quizProblems.push("缺答案容器（[data-quiz-answers]）");
+      else if (!/\shidden(?=[\s>]|=)/i.test(ansTag)) quizProblems.push("答案容器须默认 hidden —— 读者先答后看");
+    }
+  }
+  gates.push({
+    id: "self-test",
+    status: quizProblems.length ? "fail" : "pass",
+    detail: quizProblems.length ? quizProblems.join("；") : undefined,
   });
 
   return gates;
