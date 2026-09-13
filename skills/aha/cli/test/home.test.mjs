@@ -1,9 +1,10 @@
 import { test } from "node:test";
 import assert from "node:assert/strict";
-import { mkdtempSync, mkdirSync, writeFileSync, existsSync, readdirSync } from "node:fs";
+import { mkdtempSync, mkdirSync, writeFileSync, existsSync, readdirSync, readFileSync } from "node:fs";
 import { tmpdir } from "node:os";
-import { join } from "node:path";
-import { storageChoice, migratePages, suggestNonCDrive } from "../src/home.mjs";
+import { join, dirname } from "node:path";
+const __dirname = dirname(new URL(import.meta.url).pathname);
+import { storageChoice, migratePages, suggestNonCDrive, SKILL_VERSION } from "../src/home.mjs";
 import { windowsStorageGuard } from "../src/new.mjs";
 
 const tmp = mkdtempSync(join(tmpdir(), "aha-home2-"));
@@ -89,4 +90,12 @@ test("windowsStorageGuard: renders both prompt variants, blocks with true", () =
   } finally {
     console.error = orig;
   }
+});
+
+// SKILL_VERSION 与 SKILL.md metadata.version 必须一致(发布防漂移)
+test("SKILL_VERSION 与 SKILL.md 同步", () => {
+  const md = readFileSync(join(__dirname, "../../SKILL.md"), "utf8");
+  const v = md.match(/version:\s*([\d.]+)/)?.[1];
+  assert.ok(v, "SKILL.md 应含 metadata.version");
+  assert.equal(SKILL_VERSION, v, `CLI SKILL_VERSION=${SKILL_VERSION} 应等于 SKILL.md 的 ${v}`);
 });

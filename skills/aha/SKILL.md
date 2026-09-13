@@ -135,6 +135,16 @@ D↔E 成环从根走不到）。大白话降低语言门槛，实例才让抽�
 
 ### Step 1 · 跑一条命令
 
+命令输出的第一行（stderr）会标注**配套 skill 版本**：与你读到的这份
+SKILL.md 开头 `metadata.version` 比对 —— 不低于它就直接继续；低于它说明
+skill 是旧版，先执行输出里给的升级命令（`npx skills add ...`，幂等覆盖），
+**升级后必须重新读取 SKILL.md 再从 Step 1 重来**（本次生成作废，脚手架
+结构可能已变）。
+
+```bash
+npx @dimples/aha new <slug> "<概念名>"
+```
+
 ```bash
 npx @dimples/aha new <slug> "<概念名>"
 ```

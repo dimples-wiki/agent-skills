@@ -6,7 +6,7 @@
 
 import { writeFileSync, existsSync } from "node:fs";
 import { join } from "node:path";
-import { ensurePagesDir, storageChoice, suggestNonCDrive, ahaRoot, countHtmlPages } from "./home.mjs";
+import { ensurePagesDir, storageChoice, suggestNonCDrive, ahaRoot, countHtmlPages, SKILL_VERSION, SKILL_UPGRADE_CMD } from "./home.mjs";
 import { CANONICAL_TOKENS } from "./canonical-tokens.mjs";
 
 export function scaffoldHtml(title, slug) {
@@ -350,6 +350,8 @@ export function newCommand(slugArg, titleArg) {
   if (existsSync(page)) { console.error(`已存在: ${page}（换 slug 或直接编辑它）`); process.exit(2); }
   const title = titleArg ?? slug;
   writeFileSync(page, scaffoldHtml(title, slug));
+  // stderr 提示 agent 自查 skill 新旧(stdout 两行留给回执引用,保持干净)
+  console.error(`配套 skill 版本 ${SKILL_VERSION} —— 你读到的 SKILL.md 若低于此,先执行 ${SKILL_UPGRADE_CMD} 升级并重读 SKILL.md,再继续本次生成`);
   console.log(`脚手架已生成: ${page}`);
   console.log(`  含: canonical tokens + 工具条 + 引擎 + 七节空槽（SLOT1-7，第 7 层含自测块）+ 数字账本（SLOT8）`);
   console.log(`  下一步: 按内容分块 3-5 次 Edit 填内容（禁止整页 Write），完成后 aha check`);

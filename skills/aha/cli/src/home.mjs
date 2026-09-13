@@ -3,6 +3,13 @@ import { homedir } from "node:os";
 import * as fs from "node:fs";
 const { existsSync, mkdirSync, readFileSync, writeFileSync, readdirSync, renameSync, cpSync, unlinkSync, accessSync, constants } = fs;
 
+/** 本 CLI 配套的 skill 版本 —— 必须与 skills/aha/SKILL.md frontmatter 的
+ *  metadata.version 一致(单测强制同步);new 据此提示 agent 自查升级 */
+export const SKILL_VERSION = "1.2.0";
+
+/** skill 升级命令(与安装同一条,skills CLI 幂等覆盖) */
+export const SKILL_UPGRADE_CMD = "npx skills add dimples-wiki/agent-skills -s aha -y";
+
 /**
  * aha 根目录 —— 恒为 ~/.aha,始终存在:
  * 存放 config.json(动态配置)、bin/(cloudflared)、.serve.pid/.serve.log。
