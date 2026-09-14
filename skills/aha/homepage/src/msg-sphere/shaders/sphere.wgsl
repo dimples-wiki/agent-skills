@@ -52,13 +52,15 @@ fn sceneNormal(point: vec3f) -> vec3f {
   ));
 }
 
-fn marchScene(origin: vec3f, direction: vec3f) -> vec2f {
+fn marchScene(origin: vec3f, direction: vec3f) -> vec3f {
   var distanceTravelled = 0.0;
   var material = -1.0;
+  var closestApproach = 1e9;
 
   for (var step = 0; step < 144; step += 1) {
     let samplePoint = origin + direction * distanceTravelled;
     let scene = mapScene(samplePoint);
+    closestApproach = min(closestApproach, abs(scene.x));
 
     if (abs(scene.x) < SURFACE_EPSILON) {
       material = scene.y;
@@ -86,7 +88,7 @@ fn marchScene(origin: vec3f, direction: vec3f) -> vec2f {
     distanceTravelled = hi;
   }
 
-  return vec2f(distanceTravelled, material);
+  return vec3f(distanceTravelled, material, closestApproach);
 }
 
 fn ellipseMask(point: vec2f, radii: vec2f) -> f32 {
@@ -145,9 +147,10 @@ fn backgroundColor(screen: vec2f, rayDirection: vec3f) -> vec3f {
   let dustUv = screen * vec2f(38.0, 24.0) + vec2f(params.time * 0.018, 0.0);
   let cell = floor(dustUv);
   let seed = hash21(cell);
-  let mote = step(0.992, seed)
-    * (1.0 - smoothstep(0.01, 0.05, length(fract(dustUv) - 0.5)));
-  color += vec3f(0.22, 0.28, 0.36) * mote * 0.55;
+  let twinkle = 0.65 + 0.35 * sin(params.time * (0.8 + seed * 2.2) + seed * 44.0);
+  let mote = step(0.975, seed)
+    * (1.0 - smoothstep(0.012, 0.06, length(fract(dustUv) - 0.5)));
+  color += vec3f(0.34, 0.42, 0.55) * mote * twinkle;
 
   // Warm key spill from where the Sphere sits — depth cue without city noise.
   let key = exp(-length(screen - vec2f(0.0, -0.08)) * 1.35);
@@ -399,7 +402,7 @@ fn renderScreen(screen: vec2f) -> vec4f {
   color = color * (1.05 - color * 0.08);
   color = pow(max(color, vec3f(0.0)), vec3f(0.96));
 
-  // Alpha packs "near contact" for adaptive supersampling.
+  // Alpha packs "near contact OR near silhouette" for adaptive supersampling.
   let ring = contactRadius();
   let radial = length(point.xz);
   let edge = abs(materialEdge(point));
@@ -407,6 +410,19 @@ fn renderScreen(screen: vec2f) -> vec4f {
   let nearContact = saturate(
     1.0 - min(edge / (pixelWorld * 5.0), abs(radial - ring) / 0.12),
   );
+  // Analytic silhouette AA (hit side): coverage ramps 0→1 across the last
+  // ~2 device px inside the silhouette — standard AA width: kills stair-steps
+  // without a visible blur halo. (5px read as soft-focus on retina.)
+  // the outermost sphere pixels dissolve into background continuously.
+  // SPHERE MATERIAL ONLY — ground hits pass through untouched, else the
+  // stage floor around the dome gets mixed to background (embedding lost).
+  if (hit.y == 1.0) {
+    let b = length(cross(camera, rayDirection));
+    let edgeFade = smoothstep(0.0, pixelWorld * 2.0, SPHERE_RADIUS - b);
+    if (edgeFade < 1.0) {
+      color = mix(background, color, edgeFade);
+    }
+  }
   return vec4f(color, nearContact);
 }
 
@@ -422,9 +438,10 @@ fn fs_main(@location(0) uv: vec2f) -> @location(0) vec4f {
   let center = renderScreen(screen);
   var color = center.rgb;
 
-  // Adaptive 2×2 AA only on the contact arc — kills stair-steps without
-  // paying 4× cost on the whole frame.
-  if (center.a > 0.08) {
+  // 2×2 AA on the sphere silhouette + contact arc. Silhouette pixels carry
+  // partial coverage (0 < a < 1) from the march epsilon; a low threshold
+  // catches the grazing-angle fringe where stair-steps show.
+  if (center.a > 0.02) {
     let dx = (2.0 * aspect) / max(params.resolution.x, 1.0);
     let dy = 2.0 / safeHeight;
     let o = 0.35;
