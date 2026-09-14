@@ -384,9 +384,17 @@ time{font:500 .76rem/1 ui-monospace,Menlo,monospace;color:var(--t3);font-variant
   const H = { "x-aha-token": TOKEN };
   const LABEL = { idle: "", installing: "安装 cloudflared 中（首次约一分钟）…",
                   starting: "建立隧道…", running: "", error: "" };
+  let fails = 0;
   const tick = async () => {
+    try {
+      if (++fails > 5) { clearInterval(poll); st.textContent = "已与本地服务失联,刷新页面重试"; return; }
+      await doTick();
+    } catch { /* serve 已死:退避计数兜住,不再无限空转 */ }
+  };
+  const doTick = async () => {
     const s = await (await fetch("/api/share", { headers: H })).json();
     st.textContent = s.message || LABEL[s.phase] || s.phase;
+    fails = 0;
     if (s.phase === "running") {
       clearInterval(poll);
       box.hidden = false;

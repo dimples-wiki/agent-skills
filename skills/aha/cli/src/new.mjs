@@ -312,9 +312,12 @@ const SIM_MS_PER_STEP = 2400;
     const H = { "x-aha-token": token };
     body.textContent = "建立隧道…";
     await fetch("/api/share", { method: "POST", headers: H });
+    let fails = 0;
     const timer = setInterval(async () => {
       try {
+        if (++fails > 5) { clearInterval(timer); body.textContent = "已与本地服务失联,刷新页面重试"; return; }
         const s = await (await fetch("/api/share", { headers: H })).json();
+        fails = 0;
         if (s.phase === "running") {
           clearInterval(timer);
           body.innerHTML = "";
