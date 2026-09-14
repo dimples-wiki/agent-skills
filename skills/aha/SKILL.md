@@ -3,7 +3,7 @@ name: aha
 description: Use when the user wants to truly understand a concept rather than get a quick answer — triggers include "aha", "讲懂 X", "讲讲 X", "X 到底是什么 / 怎么工作的", "X 和 Y 有什么区别", or any request for a visual / diagram explanation. Produces a standalone HTML explainer page that builds a correct mental model. Not for one-line answers, expert-first deep dives, or rewriting existing documentation.
 license: ISC
 metadata:
-  version: 1.3.2
+  version: 1.3.0
   tags:
     - explanation
     - visualization
@@ -39,18 +39,17 @@ metadata:
 
 ## 七层骨架（固定，内容可取舍）
 
-每层「为什么这样设计」的学习科学依据(先行组织者/结构映射/测试效应等)集中在
-`references/theory.md`(改层前必读;日常生成不读)
-（**改层、改顺序、改常数前必读**；日常生成不用读）。
+每层「为什么这样设计」的学习科学依据(先行组织者/结构映射/测试效应等)
+集中在 `references/theory.md`（**改层、改顺序、改常数前必读**；日常生成不读）。
 
 | # | 层 | 必须做到 |
 |---|-----|----------|
-| 1 | 一句话核心 | 首屏：概念名 + 一句话说清 + 主视觉 + 起点徽章（只标级别） |
+| 1 | 一句话核心 | 首屏：概念名 + 一句话说清 + 主视觉 + 起点徽章（只标级别）；那句话零术语、零公式 —— 读完它不需要任何铺垫 |
 | 2 | 为什么存在 | before/after 对比：没有它时怎么办、痛点是什么 |
 | 3 | 直觉 | 一个类比 + **失效边界**（不写失效点的类比不许上页） |
 | 4 | 真实机制 | 大白话先行，术语后置且全文含义一致；**至少一个带真实值的具体实例**；核心机制有图形载体；流程类配**步骤模拟器** |
-| 5 | 容易混淆 | 按"各自**改变什么**"对比 2-3 个邻居概念，每卡有"输出："行 |
-| 6 | 边界与失败 | 失败模式配 1-2 字记忆标签（同页长度一致）；误区用三段式**「你可能以为 X → 其实 Y → 分界在 Z」** |
+| 5 | 容易混淆 | 按"各自**改变什么**"对比 2-3 个邻居概念，每卡有"输出："行(如「输出:一张按优先级排好的清单」) |
+| 6 | 边界与失败 | 失败模式配 1-2 字记忆标签(全页同字数,如统一 2 字:「误删/漏检」)；误区用三段式**「你可能以为 X → 其实 Y → 分界在 Z」** |
 | 7 | 记 + 自测 + 账本 | 一句话公式式收尾，关键词 `<mark>` 2-6 处，不引入新概念；随后 **2-3 个自测问题，答案默认折叠**（至少一问针对类比失效点、一问让读者预测反例结果）；页尾**数字账本**列出比例类数字的来源 |
 
 **菜单，不是模板**：按主题取舍 —— 不是每层都要写满；某层对这个主题没价值
@@ -85,11 +84,11 @@ D↔E 成环从根走不到）。大白话降低语言门槛，实例才让抽�
 页尾账本（脚手架自带 `[data-ledger]`）：正文里**每个 `N%` / `N 倍`** 都要有一条，
 `data-kind` 三选一 —— `实算`（页内可复算，写算式）/ `出处`（外部来源，写名字）/
 `估算`（示意值，写假设）；其他关键数字（时长、容量、次数）也建议入账。
-没有比例类数字就删掉全部条目、保留块。"看起来像事实错误"的表述比模糊更糟 ——
+数据表内的百分数不入账（表格本身即结构化上下文,门 13 豁免表内数字,见「质量门」)。没有比例类数字就删掉全部条目、保留块。量级断言（「上千万条才慢」「基本都支持」）同样要么给出处、要么软化成「通常/视实现而定」。"看起来像事实错误"的表述比模糊更糟 ——
 这套页面的信誉押在每个数字都经得起复算上；**账本缺条目时补来源，不是删数字**。
 
 **自测题** —— 问题不能靠复述第 7 层公式回答；答案 ≤80 字/问，默认折叠；
-只改脚手架里的文字，不改 `data-quiz*` 与 `hidden`（门 12 靠它们判定）。
+只改脚手架里的文字，不改 `data-quiz*` 与 `hidden`(结构由门 12 校验,见「质量门」)。
 
 **形式选择映射**（选错形式 = 白画）：
 
@@ -103,7 +102,8 @@ D↔E 成环从根走不到）。大白话降低语言门槛，实例才让抽�
 | 连续场 / 波 / 流 | 静态 SVG 示意；（选配）vgpu 展示层 |
 
 **规模上限**（防内容过载，拖慢生成且不加分）：模拟器 **4-6 步**、
-SVG 节点 ≤ 12、对比卡 ≤ 3、账本条目 ≤ 6、自测 2-3 问 —— 超额即删减。
+SVG 节点 ≤ 12、对比卡 ≤ 3、自测 2-3 问。账本以**全覆盖正文比例数字**为先，
+条数尽量 ≤ 6(多时合并同类项，不靠漏数字凑条数)。
 
 **大图少字**：每节一个视觉中心；文字只留标题、关键标签、必要解释与边界。
 **禁止把长篇正文拆成多个文字卡片伪装成视觉化。**
@@ -121,8 +121,8 @@ SVG 节点 ≤ 12、对比卡 ≤ 3、账本条目 ≤ 6、自测 2-3 问 ——
 **形式硬规则**：
 - 单文件自包含，渲染零远程依赖（tokens/引擎/工具条/自测块/账本已由 CLI 注入）
 - 取色只能 `var(--token)`，tokens 块外禁止 hex/rgb/hsl；
-  SVG 取色 `var(--cat-a/b/c)` / `var(--accent)` / `var(--warn)` / `var(--ok)` /
-`var(--t-1/2/3)`（文字）/ `var(--line)`、`var(--line-2)`（线框）
+  SVG 取色用 tokens 块中**已定义的任意变量**——常用:`--cat-a/b/c`(及 `-soft`)/ `--accent` /
+`--warn` / `--ok` / `--info`(及 `-soft`)/ `--t-1…4`(文字)/ `--line`、`--line-2`(线框)/ `--panel`、`--surface`(填充)
 - **页面局部布局样式允许且常需要**（before/after 网格、手算表、SVG 尺寸等）：
   集中放在 `<head>` 里一个新增的 `<style>`，只用 `var()`；不改 tokens 块，
   不改 `[SCAFFOLD-STYLE]`。tokens 已提供的类（`.card .callout .compare
@@ -134,7 +134,7 @@ SVG 节点 ≤ 12、对比卡 ≤ 3、账本条目 ≤ 6、自测 2-3 问 ——
 
 ## 工作流（三步）
 
-> 模型推理是主要耗时（写约 220 行高质量解释，实测分钟级），工具调用不到 1 分钟。
+> 模型推理是主要耗时（写约 200 行高质量解释，实测分钟级），工具调用不到 1 分钟。
 > 能砍的只有读文件（已归零）、浏览器验证（默认跳过）、探索性命令（禁止）。
 > CLI 做施工（样板注入/check/serve），你只做内容创意。
 
@@ -149,6 +149,9 @@ skill 是旧版，先执行输出里给的升级命令（`npx skills add ...`，
 ```bash
 npx @dimples/aha new <slug> "<概念名>"
 ```
+(版本体系:skill 本体 1.x / design tokens v1.3.x / npm CLI 0.x 是三条独立发布线,
+版本握手只校验 skill ↔ CLI 配套,互不约束。)
+`<slug>` 用小写 kebab-case(如 `bayes-theorem`),是文件名与 URL 的一部分。
 标题参数决定脚手架 `lang`：概念名是纯英文而用户说中文时，
 传 `"<英文名>（<中文名>）"`（如 `WebGL（网页图形库）`），免得后补一次 lang 修正。
 
@@ -168,14 +171,14 @@ npx @dimples/aha new <slug> "<概念名>"
 它同时是第 6 层「边界」的素材。随后校准起点（见上节），按内容自然分块、**建议 4-6 次 Edit**
 填完（不逐槽小改，也不必为凑次数硬合并）：① `<head>` 新增一个页面局部 `<style>`；
 ② 起点徽章 `起点 L1` + 页脚 `起点依据：…` + 容器内七槽正文 + 自测块 + 账本条目
-（从 `（SLOT1:` 到 `（SLOT8:`，约 200 行，可拆成两次）；③ `SIM_STEPS` 步骤数据。
+(从 `(SLOT1:` 到 `(SLOT8:` —— 1-7 对应七层,SLOT8 是数字账本条目;约 200 行,可拆成两次)；③ `SIM_STEPS` 步骤数据。
 脚手架按标题语言判定 `lang` —— 英文标题配中文内容时，把 `lang` 改对并入上面任意一次 Edit，不单开一步。
 `[SCAFFOLD-STYLE]` / `[QUIZ-TOGGLE]` / `[SIM-ENGINE]` / `[TOOLBAR]` 四段
 **原样保留，不进 Edit 范围**；脚手架的说明注释可留可删，不影响门。
-填完 grep 一次页面，确认不再有 `（SLOT` / `（中文标签）` 字样。
+填完 grep 一次页面,确认不再有 `(SLOT` / `(依据` / `(中文标签` 字样(全半角都试,防誊写误差)。
 内容约束见上方「七层骨架」「关键契约」—— 不要读 reference.html。
 
-### 内容自检（Step 2 写完 → Step 3 之前，7 个是/否，不需要工具）
+### 内容自检（Step 2 写完 → Step 3 之前，8 个是/否，不需要工具）
 
 讲不清的地方就是知识漏洞 —— 补齐再交付，哪条答不上就回资料补哪条：
 
@@ -185,7 +188,8 @@ npx @dimples/aha new <slug> "<概念名>"
 4. 页面里每个精确数字，我都复算过或有出处，并且比例类数字已入账本？
 5. 第 5 层邻居概念，我是在按「各自改变什么」对比，而不是罗列特性？
 6. 第 6 层的误区，先点名了错误直觉（你可能以为 X）再纠正，而不是只陈述正确答案？
-7. 第 7 层：公式单独拿给读者不借助上文也成立；自测题不能靠复述公式回答？
+7. 第 7 层：公式单独拿给读者不借助上文也成立；自测题不能靠复述公式回答，答案也不照抄正文原句（换个说法/换个数字）？
+8. 模拟器的每一步、图里的每个状态，与正文叙述互不矛盾（同一数字/同一过程）？
 
 全部「是」才进 Step 3；有「否」→ 先改内容（改了几处，回执里如实记）。
 
@@ -195,13 +199,16 @@ npx @dimples/aha new <slug> "<概念名>"
 npx @dimples/aha check <aha new 输出的路径> && npx @dimples/aha start
 ```
 
-**13 门**：单 h1 / 标题不跳档 / head 元数据 / img alt / tokens 与 canonical 一致 /
-块外无颜色字面量 / 语义类在词表 / 脚本可解析且无外链 / 无提问者指代 /
-失败标签 1-2 字一致 / 中文页模拟器标签中文化 / **自测块**（≥2 问，答案默认 `hidden`）/
-**数字账本**（每个 `N%`/`N 倍` 有条目，`data-kind` 合法）。
+**13 门**(按 check 输出顺序):
+1.单 h1 / 2.标题不跳档 / 3.head 元数据 / 4.img alt / 5.tokens 与 canonical 一致 /
+6.块外无颜色字面量 / 7.语义类在词表 / 8.脚本可解析且无外链 / 9.无提问者指代 /
+10.失败标签 1-2 字一致 / 11.中文页模拟器标签中文化 / 12.**自测块**(≥2 问,答案默认 `hidden`)/
+13.**数字账本**(每个 `N%`/`N 倍` 有条目,`data-kind` 合法;表内百分数豁免)。
 门不过 → 修 → 重跑，**每轮只修被点名的那一个问题**；连续两轮无改善 → 停止修复、
 如实报告。不得为了过门删内容、藏溢出、缩字号。门的细节与已知覆盖边界见
-`references/gates.md`（修门修不动时才读）。
+`references/gates.md`(修门修不动时才读)。已知边界:第 1/4 层的存在性、类比失效
+边界质量、自检真实性由内容自检与回执铁律兜底,不设机器门;门 5 比对剥注释核心,
+tokens 注释措辞的历史差异(如旧页注释)属容忍范围。
 
 check 过 → `aha start`（幂等：未运行则后台拉起守护，已运行则复用）→ 交付。
 **默认不打开浏览器截图/点击模拟器**；用户说「看效果」或反馈「页面有问题」时才截图核查，
@@ -210,13 +217,13 @@ check 过 → `aha start`（幂等：未运行则后台拉起守护，已运行�
 
 ### 交付回执（固定格式）
 
-check 输出的最后两行与下面前两行逐字一致，可直接复用：
+回执前两行以 **check 实际输出**为准(与其一致时直接复用)：
 
 ```
 check: 13/13 门通过
 视觉验证: skipped（默认跳过；说「看效果」即可触发）
 校准: 起点 Lx（依据：<一句证据>）
-内容自检: 7/7 通过（修正 N 处）
+内容自检: 8/8 通过（修正 N 处）
 形式门: N 轮
 ```
 
@@ -242,7 +249,7 @@ http://127.0.0.1:7332/<slug>.html
 
 ## 反模式（违反即重做）
 
-- ❌ 跳过或假做内容自检（7 问有「否」却照样交付）
+- ❌ 跳过或假做内容自检（8 问有「否」却照样交付）
 - ❌ 类比没有失效边界；类比替代了真实机制
 - ❌ 第 4 层只有抽象机制没有带真实值的实例
 - ❌ 特性罗列式对比（必须按"改变什么"对比）
@@ -258,20 +265,17 @@ http://127.0.0.1:7332/<slug>.html
 
 ## English quick reference
 
-The Chinese sections above are the contract; this is only the command sheet.
+The Chinese sections above are the full contract; this is the command sheet.
 
-1. `npx @dimples/aha new <slug> "<concept>"` — CLI injects tokens, toolbar,
-   simulator engine, seven empty slots (layer 7 includes the self-test block and
-   the number ledger). **Read nothing else** (no ls/grep of the skill dir, no
-   assets/references/cli).
-2. Decide page scope (covers / doesn't cover), calibrate L1/L2/L3 from the
-   user's phrasing, fill badge + slots + ledger entries + `SIM_STEPS` in **4-6 Edits**
-   (~220 lines, colors only via `var(--token)`, page-local layout CSS allowed
-   in one `<style>`), grep that no `（SLOT` placeholder remains, then answer the
-   7 content self-check questions.
-3. `npx @dimples/aha check <path>` must pass 13/13 → `npx @dimples/aha start`
-   → deliver the file link + the receipt above (visual verification stays
-   `skipped` unless actually screenshotted).
+1. `npx @dimples/aha new <slug> "<concept>"` — CLI injects everything; read
+   nothing else (no ls/grep of skill dir, assets, references, cli).
+2. Scope the page, calibrate L1/L2/L3, fill slots + `SIM_STEPS` in **4-6
+   Edits** (~200 lines, colors only via `var(--token)`), grep no `(SLOT`
+   remains, answer the 8 self-check questions.
+3. `aha check <path>` 13/13 → `aha start` → deliver file link + receipt
+   (visual verification stays `skipped` unless screenshotted).
 
-Optional, never default: fable end-chapter and the vgpu shader layer — explicit
-user request only, see `references/modes.md`.
+Optional, never default: fable / vgpu — explicit request only, see
+`references/modes.md`. **Never**: inline color literals, questioner
+references, decorative-only animation, unverified claims, skipping the
+self-check.

@@ -9,10 +9,10 @@
 | 2 | heading-monotonic | 标题不跳档（h2→h4 不行） | 补一级或降一级 |
 | 3 | head-meta | `<title>` / `lang` / viewport 齐全 | 脚手架自带，别删 |
 | 4 | img-alt | `<img>` 必带 alt | 装饰图 `alt=""` |
-| 5 | tokens-present | tokens 块内联且与 canonical 一致（旧版本号快照放行） | 不要手改 tokens 块 |
+| 5 | tokens-present | tokens 块内联且与 canonical 一致（剥注释核心比对(注释措辞差异容忍,色值/结构篡改必挂,无快照后门)） | 不要手改 tokens 块 |
 | 6 | no-inline-colors | tokens 块外无 hex / rgb / hsl / 命名色（含 SVG 属性、style 属性） | 换 `var(--token)` |
 | 7 | classes-known | `c-* / t-* / sim*` 语义类在词表内 | 用 tokens 已有类或页面局部 `<style>` |
-| 8 | script-syntax | 脚本可解析；`<script src>` 外链违约 | 内联；动态 `import()` 不算外链 |
+| 8 | script-syntax | 脚本可解析；`<script src>` 外链违约 | 内联；动态 `import()` 远程模块、远程 img/iframe、CSS `url(http…)` 均算外链 |
 | 9 | no-questioner-ref | 正文无「你问的」等提问者指代 | 改成面向任意读者 |
 | 10 | fail-tag-consistency | 失败标签 1-2 字、同页长度一致 | 统一成全 1 字或全 2 字 |
 | 11 | sim-label-lang | 中文页模拟器标签中文化（白名单：`SIM_LABEL_WHITELIST`） | 译成中文，专有标识符加白名单 |
@@ -23,7 +23,7 @@
 
 - 门 9 / 门 11 的机器检目前是**中文向子集**：英文页的 "as you asked" 类指代、
   英文页里的中文标签由生成契约约束，不进门。
-- 门 5 对旧版本号快照放行 canonical 比对（快照模型的已知取舍，由回执铁律兜底）。
+- 门 5 对剥注释核心比对(注释措辞差异容忍,色值/结构篡改必挂,无快照后门) canonical 比对（快照模型的已知取舍，由回执铁律兜底）。
 - 门 12 只检结构（问数、折叠）；题目质量由 SKILL.md「关键契约 · 自测题」与
   内容自检第 7 问约束。
 - 门 13 只扫**读者可见文字**（去注释 / script / style / 标签属性；SVG `<text>` 算正文），
@@ -41,3 +41,7 @@
 13 道静态门已拦住布局 / 颜色 / 语法 / 结构类大问题，首轮交付默认不开浏览器
 （显著省时、收益有限）；用户主动要求「看效果」或反馈「页面有问题」时，才打开
 浏览器截图核查 —— 此时回执的视觉验证如实写 `passed（已截图核查）`。
+
+## 门 13 覆盖备注
+- 「N 倍」与「×N」视为同一字面量(数字归一匹配账本)。
+- `<table>` 内的百分数豁免(表格即结构化上下文:数据列+来源注);表外 N%/N倍 照常索账。
