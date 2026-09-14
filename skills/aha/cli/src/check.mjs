@@ -33,14 +33,15 @@ export const SIM_LABEL_WHITELIST = [
   "ClientHello", "ServerHello",   // TLS 协议消息名
   "Q·Kᵀ", "Softmax", "Tokens",   // 注意力公式记号
   "Retrieve", "Augment", "Generate", // RAG 三阶段术语
+  "ISO", // 国际标准感光度缩写(曝光三角)
 ];
 
 // 受检前缀：这些前缀的类必须出自词表（美学锁定的范围）；
 // 其余（布局类、is-* 状态类）自由 —— 方案 A：锁美学，放布局。
-const VALIDATED_PREFIX = /^(c-|t-|sim)/;
+const VALIDATED_PREFIX = /^(c-|t-|sim(?:$|-))/;
 
 const HEX = /#[0-9a-fA-F]{3,8}\b/g; // 覆盖 #RGB/#RGBA/#RRGGBB/#RRGGBBAA
-const FUNC_COLOR = /\brgba?\(|\bhsla?\(/i;
+const FUNC_COLOR = /\brgba?\(|\bhsla?\(|\boklch\(|\boklab\(|\blab\(|\blch\(|\bcolor\(/i;
 
 // HTML 注释不参与任何门扫描（防 <!-- <h1> --> 干扰计数）
 const stripComments = (html) => html.replace(/<!--[\s\S]*?-->/g, "");
@@ -61,7 +62,8 @@ function runGates(rawHtml) {
   const html = stripComments(rawHtml);
 
   // 1. single-h1 —— 全文恰好一个 <h1>
-  const h1s = (html.match(/<h1[\s>]/gi) ?? []).length;
+  const htmlNoScript = html.replace(/<(script|style)\b[^>]*>[\s\S]*?<\/\1>/gi, "");
+  const h1s = (htmlNoScript.match(/<h1[\s>]/gi) ?? []).length;
   gates.push({
     id: "single-h1",
     status: h1s === 1 ? "pass" : "fail",
@@ -101,20 +103,20 @@ function runGates(rawHtml) {
   });
 
   // 5. tokens-present —— 原样内联的 design tokens：版本标记 + 真实结构 +
-  //    当前版本下与 canonical 逐内容一致（防伪造/篡改调色板；旧版本快照放行）
+  //    与 canonical 核心(剥离注释与版本号)逐字一致。注释差异容忍(tokens 注释会演化,
+  //    旧页面不因注释更新而误挂);变量/色值篡改必挂(改版本号也无法绕过 —— 无快照放行)
+  const coreOfTokens = (s) => norm(
+    s.replace(/\/\*[\s\S]*?\*\//g, "").replace(/aha-design-tokens v[\d.]+/g, "aha-design-tokens"),
+  );
   const blocks = styleBlocks(html);
   const TOKENS_RE = /aha-design-tokens v\d/;
   const looksLikeTokens = (b) => TOKENS_RE.test(b) && /:root/.test(b) && /--accent:/.test(b);
   const tokensBlockIdx = blocks.findIndex(looksLikeTokens);
   let tokensDetail;
   let tokensOk = tokensBlockIdx >= 0;
-  if (tokensOk) {
-    const block = blocks[tokensBlockIdx];
-    const ver = block.match(/aha-design-tokens v(\d[\d.]*)/)?.[1];
-    if (ver === CANONICAL_VERSION && !norm(block).includes(norm(CANONICAL_TOKENS))) {
-      tokensOk = false;
-      tokensDetail = `tokens 块版本为当前版 v${CANONICAL_VERSION} 但内容与 canonical 不一致 —— 禁止改写 tokens`;
-    }
+  if (tokensOk && coreOfTokens(blocks[tokensBlockIdx]) !== coreOfTokens(CANONICAL_TOKENS)) {
+    tokensOk = false;
+    tokensDetail = "tokens 块与 canonical 不一致(注释外的变量/色值被改写,或来自未知来源)—— 禁止改写 tokens";
   }
   gates.push({
     id: "tokens-present",
@@ -129,7 +131,7 @@ function runGates(rawHtml) {
   // 引号字符串（字体名等）不参与命名色检测：font-family:'Red Hat Text' 不是颜色
   const stripStrings = (v) => v.replace(/(['"])[^'"]*\1/g, "");
   // 连字符也作词边界：white-space/line-height 之类属性名不是颜色
-  const NAMED_COLOR = /(?<![\w-])(?:red|blue|green|yellow|orange|purple|pink|brown|gray|grey|black|white|cyan|magenta|violet|gold|silver|crimson|salmon|coral|teal|indigo|ivory|beige|khaki|maroon|navy|olive|orchid|plum|tan|thistle)(?![\w-])/i;
+  const NAMED_COLOR = /(?<![\w-])(?:red|blue|green|yellow|orange|purple|pink|brown|gray|grey|black|white|cyan|magenta|violet|gold|silver|crimson|salmon|coral|teal|indigo|ivory|beige|khaki|maroon|navy|olive|orchid|plum|tan|thistle|aqua|lime|fuchsia|rebeccapurple|chartreuse|aquamarine|turquoise|skyblue|lavender|wheat|sienna|azure)(?![\w-])/i;
   const colorHits = [];
   blocks.forEach((b, i) => {
     if (i === tokensBlockIdx) return;
@@ -137,7 +139,7 @@ function runGates(rawHtml) {
     const cleanNS = stripStrings(clean);
     const hex = clean.match(HEX);
     if (hex) colorHits.push(`<style> 内 hex: ${[...new Set(hex)].join(", ")}`);
-    if (FUNC_COLOR.test(clean)) colorHits.push("<style> 内 rgb()/hsl()");
+    if (FUNC_COLOR.test(clean)) colorHits.push("<style> 内 rgb()/hsl()/oklch() 等颜色函数");
     if (NAMED_COLOR.test(cleanNS)) colorHits.push("<style> 内命名颜色");
   });
   for (const v of attrValues(html, "style")) {
@@ -187,6 +189,18 @@ function runGates(rawHtml) {
       scriptProblems.push("外链 <script src> 违反单文件自包含契约");
       continue;
     }
+    if (/\b(?:fetch|XMLHttpRequest|\.open\()\s*\(?\s*['"]https?:\/\//.test(body)) {
+      scriptProblems.push("脚本内 fetch/请求远程资源违反单文件自包含契约");
+      continue;
+    }
+    if (/(?:https?:|wss?:)\/\//.test(body)) {
+      scriptProblems.push("脚本内出现远程 URL 字面量(任何 API 形式)违反单文件自包含契约");
+      continue;
+    }
+    if (/(?:https?:|wss?:)\/\//.test(body)) {
+      scriptProblems.push("脚本内出现远程 URL 字面量(任何 API 形式)违反单文件自包含契约");
+      continue;
+    }
     if (/type=["']importmap["']/i.test(attrs)) continue; // JSON，语法门不适用
     let code = body;
     let wrap = (c) => c;
@@ -204,6 +218,16 @@ function runGates(rawHtml) {
       scriptProblems.push(`${e.message.slice(0, 80)}`);
     }
   }
+  // 自包含面:样式表、图片、iframe、CSS url() 的远程引用均违反单文件契约
+  if (/<link\b[^>]*rel=["']?stylesheet["']?[^>]*href=["']?https?:\/\//i.test(rawHtml) || /<link\b[^>]*href=["']?https?:\/\/[^>]*rel=["']?stylesheet["']?/i.test(rawHtml)) {
+    scriptProblems.push("外链 <link rel=stylesheet> 违反单文件自包含契约");
+  }
+  if (/<(?:img|image|iframe|source|video|audio|track|object|embed|base)\b[^>]*(?:src|href|data)=["']?https?:\/\//i.test(rawHtml)) {
+    scriptProblems.push("远程资源(img/iframe 等的 http src)违反单文件自包含契约");
+  }
+  if (/url\(\s*["']?https?:\/\//i.test(html) || /@import\s+["']?https?:\/\//i.test(html) || /<meta\b[^>]*http-equiv=["']?refresh["']?[^>]*https?:\/\//i.test(rawHtml)) {
+    scriptProblems.push("CSS url() 引用远程资源违反单文件自包含契约");
+  }
   gates.push({
     id: "script-syntax",
     status: scriptProblems.length ? "fail" : "pass",
@@ -212,7 +236,7 @@ function runGates(rawHtml) {
 
   // 9. no-questioner-ref —— 页面会被分享给未提问的读者，正文不得出现仅对
   //    原提问者成立的指代（内容评审两轮的实际漂移模式，grep 可拦）
-  const REF_RE = /你问的|你的第.问|你问题的|回到你的问题|你带着.{0,4}问题|先回答你的问题/;
+  const REF_RE = /你问的|你的第.问|你问题的|回到你的问题|你带着.{0,4}问题|先回答你的问题|如你所问|你提到的|正如你|你刚才的|你所说的|针对你的问题/;
   const refHit = REF_RE.test(html.replace(/<script\b[\s\S]*?<\/script>/gi, "")); // 脚本内容不参与（防 JS 字符串误伤）
   gates.push({
     id: "no-questioner-ref",
@@ -221,7 +245,10 @@ function runGates(rawHtml) {
   });
 
   // 10. fail-tag-consistency —— 失败模式记忆标签 1-2 字且同页一致
-  const tags = [...html.matchAll(/(?<![\w-])class=(?:"tag"|'tag'|tag(?=[\s>]))>\s*([^<]{1,12})</g)].map((m) => m[1].trim());
+  const tags = [
+    ...[...html.matchAll(/(?<![\w-])class=(?:"[^"]*\btag\b[^"]*"|'[^']*\btag\b[^']*'|tag(?=[\s>]))>\s*([^<]{1,12})</g)].map((m) => m[1].trim()),
+    ...[...html.matchAll(/(?<![\w-])class=(?:"[^"]*\btag\b[^"]*"|'[^']*\btag\b[^']*'|tag(?=[\s>]))\s+title="([^"]{1,12})"/g)].map((m) => m[1].trim()),
+  ];
   const badTags = tags.filter((t) => t.length > 2);
   const lens = new Set(tags.map((t) => t.length));
   const tagInconsistent = tags.length > 0 && (badTags.length > 0 || lens.size > 1);
@@ -234,7 +261,7 @@ function runGates(rawHtml) {
   // 11. sim-label-lang —— 中文页模拟器节点标签必须中文，专有技术标识符白名单除外
   const WHITELIST = new Set(SIM_LABEL_WHITELIST);
   const isZh = /<html[^>]*lang="zh/i.test(html);
-  const kLabels = [...html.matchAll(/<span (?<![\w-])class=(?:"k"|'k'|k(?=[\s>]))>([^<]+)<\/span>/g)].map((m) => m[1].trim());
+  const kLabels = [...html.matchAll(/<span (?<![\w-])class=(?:"[^"]*\bk\b[^"]*"|'[^']*\bk\b[^']*'|k(?=[\s>]))>([^<]+)<\/span>/g)].map((m) => m[1].trim());
   const badLabels = isZh
     ? kLabels.filter((k) => !WHITELIST.has(k) && !/[一-鿿]/.test(k))
     : [];
@@ -251,19 +278,30 @@ function runGates(rawHtml) {
   //     只在 class 属性里找 takeaway：tokens CSS 里的 .takeaway 选择器不算（组件演示页免检）。
   const classTokens = attrValues(html, "class").flatMap((v) => v.split(/\s+/));
   const hasTakeaway = classTokens.includes("takeaway");
+  // 内容页信号(三道,任一即触发门 12/13):takeaway 类 / ≥3 个节眉 / 正文体量 >2200 字
+  // —— 删类改名都绕不过"内容足够多却缺自测与账本"的实质判定;组件演示页(≤1836 字)不触发
+  const bodyVolume = norm(
+    (html.match(/<body[^>]*>([\s\S]*?)<\/body>/i)?.[1] ?? "")
+      .replace(/<(script|style)\b[^>]*>[\s\S]*?<\/\1>/gi, "")
+      .replace(/<[^>]+>/g, ""),
+  ).length;
+  const isContentPage = hasTakeaway || (html.match(/data-n=/g) || []).length >= 3 || bodyVolume > 2200;
   const quizProblems = [];
-  if (hasTakeaway) {
+  if (isContentPage) {
     const quiz = html.match(/<(section|div)\b[^>]*\bdata-quiz\b[^>]*>([\s\S]*?)<\/\1>/i);
     if (!quiz) {
       quizProblems.push("缺自测块（[data-quiz]）：「记」之后须有 ≥2 个自测问题，答案默认折叠");
     } else {
       const body = quiz[2];
-      const qCount = (body.match(/<li[\s>]/gi) ?? []).length;
+      const qCount = (body.replace(/<div\b[^>]*\bdata-quiz-answers\b[^>]*>[\s\S]*?<\/div>/i, "").match(/<li[\s>]/gi) ?? []).length;
       if (qCount < 2) quizProblems.push(`自测问题只有 ${qCount} 个，至少 2 个（一问类比失效点，一问反例预测）`);
       const ansTag = body.match(/<[a-z]+\b[^>]*\bdata-quiz-answers\b[^>]*>/i)?.[0];
       if (!ansTag) quizProblems.push("缺答案容器（[data-quiz-answers]）");
       else if (!/\shidden(?=[\s>]|=)/i.test(ansTag)) quizProblems.push("答案容器须默认 hidden —— 读者先答后看");
     }
+  }
+  if (isContentPage && (/\.quiz-ans\s*\{[^}]*display\s*:\s*(?!none)/i.test(html) || /data-quiz-answers\b[^>]*\bstyle="[^"]*display\s*:\s*(?!none)/i.test(html))) {
+    quizProblems.push("样式覆盖 .quiz-ans 的 display(选择器或内联)—— 答案必须默认折叠");
   }
   gates.push({
     id: "self-test",
@@ -277,15 +315,19 @@ function runGates(rawHtml) {
   //     只扫读者可见文字：去注释 / script / style / 标签属性；SVG <text> 算正文。
   //     已知取舍：不带 % 或"倍"的绝对数字（6 GB、95 分）不进门，由内容自检第 4 问约束。
   const ledgerProblems = [];
-  if (hasTakeaway) {
+  if (isContentPage) {
     const ledgerRe = /<(details|section|div)\b[^>]*\bdata-ledger\b[^>]*>([\s\S]*?)<\/\1>/i;
     const ledgerMatch = html.match(ledgerRe);
     if (!ledgerMatch) {
       ledgerProblems.push("缺数字账本（[data-ledger]）：完整页须列出比例类数字的来源（实算/出处/估算）");
     } else {
-      const visible = stripComments(html)
+      const fullWidth = (t) => t.replace(/[０-９]/g, (d) => String.fromCharCode(d.charCodeAt(0) - 0xfee0)).replace(/％/g, "%").replace(/×/g, "×");
+      const visible = fullWidth(stripComments(html))
         .replace(ledgerRe, "")
         .replace(/<(script|style)\b[^>]*>[\s\S]*?<\/\1>/gi, "")
+        // 数据表内的百分数豁免:表格本身即结构化上下文(数据列+来源注),逐个索账
+        // 曾把伯克利六系整表 12 个百分数都逼进账本,与「账本 ≤6 条」上限冲突
+        .replace(/<table\b[^>]*>[\s\S]*?<\/table>/gi, " ")
         // 块 / 单元格边界换成分隔符，避免相邻单元格的数字拼成「9.2% 10」被当成取模
         .replace(/<\/(td|th|li|p|tr|div|h[1-6]|dt|dd|section|caption|figcaption)>|<br\s*\/?>/gi, " | ")
         .replace(/<[^>]+>/g, " ")
@@ -297,14 +339,17 @@ function runGates(rawHtml) {
       const pctLits = [...visible.matchAll(/(\d[\d,]*(?:\.\d+)?) ?(%|％)(?! ?\d)/g)].map(
         (m) => `${m[1].replace(/,/g, "")}${m[2] === "％" ? "%" : "%"}`,
       );
+      // 维度标注(3 × 4 网格)不是倍数:先剥掉「数字 × 数字」,再提取「×N / N 倍」
+      const multSource = visible.replace(/\d[\d,.]*\s?×\s?\d[\d,.]*/g, " ");
       const multLits = [
-        ...visible.matchAll(/(\d[\d,]*(?:\.\d+)?) ?倍(?!\d)/g),
-        ...visible.matchAll(/[×✕]\s?(\d[\d,]*(?:\.\d+)?)/g),
+        ...multSource.matchAll(/(\d[\d,]*(?:\.\d+)?) ?倍(?!\d)/g),
+        ...multSource.matchAll(/×\s?(\d[\d,]*(?:\.\d+)?)/g),
       ].map((m) => m[1].replace(/,/g, ""));
-      const ledgerText = norm(stripComments(ledgerMatch[2]).replace(/<[^>]+>/g, " ")).replace(/,(?=\d)/g, "").replace(/％/g, "%");
+      const ledgerText = fullWidth(norm(stripComments(ledgerMatch[2]).replace(/<[^>]+>/g, "|"))).replace(/,(?=\d)/g, "");
+      const covers = (k) => new RegExp(`(?<![\\d.])${k.replace(/[.*+?^${}()|[\\]\\]/g, "\\$&")}`).test(ledgerText);
       const missing = [
-        ...pctLits.filter((lit) => !ledgerText.includes(lit)).map((lit) => `${lit}(百分比)`),
-        ...[...new Set(multLits)].filter((k) => !ledgerText.includes(k)).map((k) => `${k}(倍)`),
+        ...pctLits.filter((lit) => !covers(lit)).map((lit) => `${lit}(百分比)`),
+        ...[...new Set(multLits)].filter((k) => !covers(k)).map((k) => `${k}(倍)`),
       ];
       if (missing.length) ledgerProblems.push(`账本缺条目：${missing.join("、")}（正文出现的比例类数字都要写来源）`);
       const entries = [...ledgerMatch[2].matchAll(/<li\b([^>]*)>/gi)];

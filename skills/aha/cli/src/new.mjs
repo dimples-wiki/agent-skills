@@ -10,6 +10,8 @@ import { ensurePagesDir, storageChoice, suggestNonCDrive, ahaRoot, countHtmlPage
 import { CANONICAL_TOKENS } from "./canonical-tokens.mjs";
 
 export function scaffoldHtml(title, slug) {
+  const esc = (t) => String(t).replace(/[&<>"']/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" })[c]);
+  const safeTitle = esc(title);
   const css = CANONICAL_TOKENS; // canonical 已随 src/ 发布，不依赖仓库 assets/
   const lang = /[一-鿿]/.test(title) ? "zh-CN" : "en";
   return `<!DOCTYPE html>
@@ -17,12 +19,12 @@ export function scaffoldHtml(title, slug) {
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>${title} · aha 图解</title>
+<title>${safeTitle} · aha 图解</title>
 <style>
 ${css}
 </style>
 <script>
-/* 主题 bootstrap：越早执行越不闪（FOUC 防护） */
+/* 主题 bootstrap:越早执行越不闪(FOUC 防护) */
 (() => { try {
   const r = document.documentElement;
   r.dataset.theme = localStorage.getItem("aha-theme") ||
@@ -41,44 +43,51 @@ ${css}
 
 <div class="container page">
 
-  <!-- ===== 第 1 层：一句话核心 ===== -->
+  <!-- ===== 第 1 层:一句话核心 ===== -->
   <header class="section" style="margin-top:0">
     <p class="eyebrow">aha · 概念图解</p>
     <div class="hero-head">
-      <h1 class="display">${title}</h1>
+      <h1 class="display">${safeTitle}</h1>
       <span class="badge">起点 L1</span>
     </div>
-    <p class="lead"><strong>（SLOT1: 一句话说清）</strong></p>
-    <div class="pipe" role="img" aria-label="（SLOT1: 主视觉链路 aria 描述）">
-      <div class="p"><b>（SLOT1）</b><span></span></div>
+    <p class="lead"><strong>(SLOT1: 一句话说清)</strong></p>
+    <div class="pipe" role="img" aria-label="(SLOT1: 主视觉链路 aria 描述)">
+      <div class="p"><b>(SLOT1)</b><span></span></div>
       <span class="arrow" aria-hidden="true">→</span>
-      <div class="p"><b>（SLOT1）</b><span></span></div>
+      <div class="p"><b>(SLOT1)</b><span></span></div>
       <span class="arrow" aria-hidden="true">→</span>
-      <div class="p"><b>（SLOT1）</b><span></span></div>
+      <div class="p"><b>(SLOT1)</b><span></span></div>
     </div>
   </header>
 
-  <!-- ===== 第 2 层：为什么存在 ===== -->
+  <!-- ===== 第 2 层:为什么存在 ===== -->
   <section class="section">
     <p class="eyebrow" data-n="01">为什么需要它</p>
-    <h2>（SLOT2: 标题）</h2>
+    <h2>(SLOT2: 标题)</h2>
     <!-- SLOT2: before/after 对比卡 + 大白话 callout -->
   </section>
 
-  <!-- ===== 第 3 层：直觉 ===== -->
+  <!-- ===== 第 3 层:直觉 ===== -->
   <section class="section">
     <p class="eyebrow" data-n="02">先建立一个直觉</p>
-    <h2>（SLOT3: 标题）</h2>
-    <!-- SLOT3: .analogy 类比框 + .analogy-limit 失效边界（必填） -->
+    <h2>(SLOT3: 标题)</h2>
+    <!-- SLOT3: .analogy 类比框 + .analogy-limit 失效边界(必填) -->
   </section>
 
-  <!-- ===== 第 4 层：真实机制 ===== -->
+  <!-- ===== 第 4 层:真实机制 ===== -->
   <section class="section">
     <p class="eyebrow" data-n="03">真实机制</p>
-    <h2>（SLOT4: 标题）</h2>
-    <!-- SLOT4: 大白话先行；流程配模拟器（下方 SIM_STEPS 填数据）；
-         核心机制必须有图形载体（SVG 取色 var()）；
-         .sim-node 可按需增删（引擎遍历全部 [data-node]），data-node 值需唯一 -->
+    <h2>(SLOT4: 标题)</h2>
+    <!-- SLOT4: 大白话先行;流程配模拟器(下方 SIM_STEPS 填数据);
+         核心机制必须有图形载体(SVG 取色 var());
+         .sim-node 可按需增删(引擎遍历全部 [data-node]),data-node 值需唯一 -->
+<script>
+const SIM_STEPS = [
+  /* (SLOT4: 步骤数据 —— 旁白中文引号「“ ”」;不用模拟器则整段删除,连同播放器脚本) */
+];
+const SIM_MS_PER_STEP = 2400;
+</script>
+
     <div class="sim" data-sim>
       <div class="sim-stage">
         <div class="sim-node" data-node="a"><span class="k">（中文标签）</span><span data-node-text>待命</span></div>
@@ -96,60 +105,60 @@ ${css}
     </div>
   </section>
 
-  <!-- ===== 第 5 层：容易混淆 ===== -->
+  <!-- ===== 第 5 层:容易混淆 ===== -->
   <section class="section">
     <p class="eyebrow" data-n="04">容易混淆的</p>
-    <h2>（SLOT5: 标题）</h2>
-    <!-- SLOT5: .compare 对比卡（主角 .compare-highlight），每卡 .out 输出行 -->
+    <h2>(SLOT5: 标题)</h2>
+    <!-- SLOT5: .compare 对比卡(主角 .compare-highlight),每卡 .out 输出行 -->
   </section>
 
-  <!-- ===== 第 6 层：边界与失败 ===== -->
+  <!-- ===== 第 6 层:边界与失败 ===== -->
   <section class="section">
     <p class="eyebrow" data-n="05">边界与失败模式</p>
-    <h2>（SLOT6: 标题）</h2>
+    <h2>(SLOT6: 标题)</h2>
     <!-- SLOT6: .fails 一字标签 + 误区 .callout-warn + 适用 .callout-ok -->
   </section>
 
-  <!-- ===== 第 7 层：记 + 自测 ===== -->
+  <!-- ===== 第 7 层:记 + 自测 ===== -->
   <div class="takeaway">
-    <p>（SLOT7: 一句话公式，关键词 <mark>mark</mark> 2-6 处）</p>
+    <p>(SLOT7: 一句话公式，关键词 <mark>mark</mark> 2-6 处)</p>
   </div>
 
-  <!-- 第 7 层·自测块：至少 2 问：① 针对第 3 层类比的失效点；② 让读者预测一个反例的结果。
-       答案 ≤80 字/问，默认折叠（门 12）。只改 SLOT7 占位文字，不改 data-* 与 hidden；本注释可留。 -->
+  <!-- 第 7 层·自测块:至少 2 问:① 针对第 3 层类比的失效点;② 让读者预测一个反例的结果。
+       答案 ≤80 字/问,默认折叠。只改 SLOT7 占位文字,不改 data-* 与 hidden;本注释可留。 -->
   <section class="section quiz" data-quiz>
     <p class="eyebrow" data-n="06">合上页面前</p>
-    <h2>（SLOT7: 自测标题，如「两个问题」）</h2>
+    <h2>(SLOT7: 自测标题，如「两个问题」)</h2>
     <ol class="quiz-q">
-      <li>（SLOT7: 问题 1 —— 类比在哪里失效？为什么？）</li>
-      <li>（SLOT7: 问题 2 —— 如果……会怎样？）</li>
+      <li>(SLOT7: 问题 1 —— 类比在哪里失效？为什么？)</li>
+      <li>(SLOT7: 问题 2 —— 如果……会怎样？)</li>
     </ol>
     <button type="button" class="quiz-toggle" data-quiz-toggle
             aria-expanded="false" aria-controls="quiz-answers">查看答案</button>
     <div class="quiz-ans" id="quiz-answers" data-quiz-answers hidden>
-      <p><strong>1）</strong>（SLOT7: 答案 1）</p>
-      <p><strong>2）</strong>（SLOT7: 答案 2）</p>
+      <p><strong>1)</strong>(SLOT7: 答案 1)</p>
+      <p><strong>2)</strong>(SLOT7: 答案 2)</p>
     </div>
   </section>
 
-  <p class="t-3">起点依据：（SLOT1: Lx · 一句证据，如「纯白话提问」）</p>
+  <p class="t-3">起点依据:(SLOT1: Lx · 一句证据，如「纯白话提问」)</p>
 
-  <!-- 数字账本（门 13）：正文里每个 N% / N 倍 都要有一条；data-kind 只能是 实算 / 出处 / 估算 ——
-       实算 = 页内可复算，写算式；出处 = 外部来源，写名字；估算 = 示意值，写假设。
-       其他关键数字（时长、容量、次数）也建议入账。没有比例类数字则删掉全部 <li>、保留本块。 -->
+  <!-- 数字账本:正文里每个 N% / N 倍 都要有一条;data-kind 只能是 实算 / 出处 / 估算 ——
+       实算 = 页内可复算,写算式;出处 = 外部来源,写名字;估算 = 示意值,写假设。
+       其他关键数字(时长、容量、次数)也建议入账。没有比例类数字则删掉全部 <li>、保留本块。 -->
   <details class="ledger" data-ledger>
     <summary>本页数字从哪来</summary>
     <ul>
-      <li data-kind="实算"><b>（SLOT8: 数字）</b>（SLOT8: 算式，如 6 GB ÷ 360 MB ≈ 17）</li>
-      <li data-kind="出处"><b>（SLOT8: 数字）</b>（SLOT8: 来源名，如 Bloom 1970 论文表 1）</li>
-      <li data-kind="估算"><b>（SLOT8: 数字）</b>（SLOT8: 假设，如 按 4 节点均匀分布示意）</li>
+      <li data-kind="实算"><b>(SLOT8: 数字)</b>(SLOT8: 算式，如 6 GB ÷ 360 MB ≈ 17)</li>
+      <li data-kind="出处"><b>(SLOT8: 数字)</b>(SLOT8: 来源名，如 Bloom 1970 论文表 1)</li>
+      <li data-kind="估算"><b>(SLOT8: 数字)</b>(SLOT8: 假设，如 按 4 节点均匀分布示意)</li>
     </ul>
   </details>
 
 </div>
 
 <style>
-/* [SCAFFOLD-STYLE] 脚手架局部样式（首屏头部 + 自测块 + 数字账本）—— 只用 var()，禁止改写 */
+/* [SCAFFOLD-STYLE] 脚手架局部样式(首屏头部 + 自测块 + 数字账本)—— 只用 var(),禁止改写 */
 .hero-head{display:flex;align-items:flex-start;justify-content:space-between;gap:var(--sp-3);flex-wrap:wrap}
 .ledger{margin-top:var(--sp-4);border-top:1px dashed var(--line-2);padding-top:var(--sp-2);
   font-size:var(--fs-small);color:var(--t-2)}
@@ -193,13 +202,7 @@ ${css}
 </script>
 
 <script>
-const SIM_STEPS = [
-  /* （SLOT4: 步骤数据 —— 旁白中文引号「“ ”」；不用模拟器则整段删除，含 [SIM-ENGINE]） */
-];
-const SIM_MS_PER_STEP = 2400;
-</script>
-<script>
-/* [SIM-ENGINE] 播放器逻辑 —— 禁止修改（canonical 在 reference.html） */
+/* [SIM-ENGINE] 步骤模拟器播放逻辑 —— 请勿改动 */
 (() => {
   for (const root of document.querySelectorAll("[data-sim]")) {
     const steps = SIM_STEPS, last = steps.length - 1;
@@ -267,7 +270,7 @@ const SIM_MS_PER_STEP = 2400;
 })();
 </script>
 <script>
-/* [TOOLBAR] 页面工具条 —— 主题/风格/分享（canonical 在 reference.html） */
+/* [TOOLBAR] 页面工具条(主题/风格/分享)—— 请勿改动 */
 (() => {
   const root = document.documentElement;
   const PRESETS = ["warm", "pop", "ink"];
@@ -341,7 +344,7 @@ const SIM_MS_PER_STEP = 2400;
 `;
 }
 
-/** aha new <slug> [标题] —— 幂等：已存在则拒绝 */
+/** aha new <slug> [标题] —— 幂等:已存在则拒绝 */
 export function newCommand(slugArg, titleArg) {
   // slug 只作文件名用:非法字符归一为 "-",整段剥掉首尾连字符;
   // 纯中文等清洗后为空 → 报用法错(agent 应传 ASCII kebab-case,中文放标题参数)
@@ -355,7 +358,7 @@ export function newCommand(slugArg, titleArg) {
   // stderr 提示 agent 自查 skill 新旧(stdout 两行留给回执引用,保持干净)
   console.error(`配套 skill 版本 ${SKILL_VERSION} —— 你读到的 SKILL.md 若低于此,先执行 ${SKILL_UPGRADE_CMD} 升级并重读 SKILL.md,再继续本次生成`);
   console.log(`脚手架已生成: ${page}`);
-  console.log(`  含: canonical tokens + 工具条 + 引擎 + 七节空槽（SLOT1-7，第 7 层含自测块）+ 数字账本（SLOT8）`);
+  console.log(`  含: canonical tokens + 工具条 + 引擎 + 七节空槽(SLOT1-7，第 7 层含自测块)+ 数字账本(SLOT8)`);
   console.log(`  下一步: 按内容自然分块 4-6 次 Edit 填内容（禁止整页 Write），完成后 aha check`);
   return page;
 }

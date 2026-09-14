@@ -5,7 +5,7 @@ const { existsSync, mkdirSync, readFileSync, writeFileSync, readdirSync, renameS
 
 /** 本 CLI 配套的 skill 版本 —— 必须与 skills/aha/SKILL.md frontmatter 的
  *  metadata.version 一致(单测强制同步);new 据此提示 agent 自查升级 */
-export const SKILL_VERSION = "1.3.2";
+export const SKILL_VERSION = "1.3.0";
 
 /** skill 升级命令(与安装同一条,skills CLI 幂等覆盖) */
 export const SKILL_UPGRADE_CMD = "npx skills add dimples-wiki/agent-skills -s aha -y";

@@ -15,8 +15,7 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>RAG 是什么 · aha 图解</title>
-<style>
-/* ============================================================
+<style>/* ============================================================
    aha-design-tokens v1.3.1 — 唯一合法的颜色/字号/圆角来源
    ============================================================
    规则（SKILL.md 契约）：
@@ -24,8 +23,8 @@
    2. 颜色只能通过 var(--token) 或本文件定义的语义类名使用。
    3. tokens 块之外禁止出现 hex / rgb() / hsl() —— `aha check` 会扫描。
    4. 页面自定义 CSS（布局、SVG 图形）允许，但取色必须 var()。
-   双轴换肤（archify theme × preset 模式）：
-   · data-theme = dark | light（明暗对等：每个颜色成对派生）
+   双轴换肤(明暗主题 × 预设风格)：
+   · data-theme = dark | light(明暗)（明暗对等：每个颜色成对派生）
    · data-preset = warm（默认·暖编辑部）| pop（活泼·糖果）| ink（冷静·专业）
    只翻 <html> 属性换肤，组件代码零改动；预设只覆写颜色，不改字号与间距。
    色距规则（v1.3.1）：cat-b 与 ok/info/accent/cat-c 四邻均须常视力 ΔE>20；
@@ -117,7 +116,7 @@
   --shadow: 0 8px 26px rgba(96, 74, 40, .13);
 }
 
-/* ---- 预设 pop：活泼糖果（v1.2，用户反馈"配色老气"而来） ---- */
+/* ---- 预设 pop：活泼糖果(v1.2 引入) ---- */
 :root[data-preset="pop"] {
   --bg:#191324; --surface:#221b30; --panel:#2b2140; --panel-2:#342850;
   --line:#473868; --line-2:#604b8a;
@@ -148,7 +147,7 @@
 }
 
 /* ---- 预设 ink：冷静专业（light 的 cat-b 不得不高饱和：accent 蓝与 cat-c 紫
-   夹逼靛蓝中段，柔靛候选 ΔE76 全部 <20，见 DESIGN.md v1.3.1） ---- */
+   夹逼靛蓝中段，柔靛候选 ΔE76 全部 <20，v1.3.1 取舍记录） ---- */
 :root[data-preset="ink"] {
   --bg:#0e131a; --surface:#161c26; --panel:#1c2430; --panel-2:#232c3a;
   --line:#333e4f; --line-2:#4a5768;
@@ -192,7 +191,7 @@ body {
 
 /* ============ 布局 ============ */
 /* 用逻辑属性让 .container（水平留白）与 .page（垂直节奏）在同一元素上正交组合，
-   谁也不会清零谁的 padding（2026-09-08 漂移案例 #1：简写互相覆盖导致窄屏贴边） */
+   谁也不会清零谁的 padding（历史坑:简写互相覆盖曾致窄屏贴边) */
 .container { max-width: var(--content-w); margin-inline: auto; padding-inline: var(--sp-4); }
 .page { padding-block: var(--sp-6) var(--sp-5); }
 
@@ -272,7 +271,7 @@ code, .mono { font-family: var(--font-mono); font-size: .92em;
 .compare-highlight > h3 { color: var(--accent); }
 
 /* ============ 组件：管线（首屏概念链） ============ */
-/* 窄屏自动纵排、箭头转向 —— 避免换行后"孤儿箭头"（2026-09-08 漂移案例 #2） */
+/* 窄屏自动纵排、箭头转向 —— 避免换行后"孤儿箭头"（历史坑） */
 .pipe { display: flex; flex-wrap: wrap; gap: var(--sp-2); align-items: stretch; margin: var(--sp-4) 0; }
 .pipe .p { flex: 1 1 8rem; background: var(--surface); border: 1px solid var(--line);
   border-radius: var(--r-m); padding: var(--sp-2) var(--sp-3); text-align: center; }
@@ -351,8 +350,7 @@ code, .mono { font-family: var(--font-mono); font-size: .92em;
 .share-pop .hint { color: var(--t-3); }
 .share-pop code { word-break: break-all; }
 
-/* 窄屏模拟器两列（v1.3.1：提特异性 .sim-stage .sim-node —— 此前放在 .pipe 媒体查询里
-   是死代码，评审连续两轮抓到"声称修复未生效"；此后此类修复必须带浏览器断言回执） */
+/* 窄屏模拟器两列(v1.3.1:.sim-stage .sim-node 需特异性,不能搭 .pipe 的媒体查询) */
 @media (max-width: 34rem) {
   .sim-stage .sim-node { flex: 1 1 calc(50% - var(--sp-2)); }
 }
@@ -363,7 +361,10 @@ code, .mono { font-family: var(--font-mono); font-size: .92em;
   *, *::before, *::after { animation: none !important; transition: none !important; }
 }
 
-/* ============ 本页专用布局（颜色全部 var()） ============ */
+/* —— 以下为页内附加样式,置于独立 style 块 —— */
+
+</style>
+<style>
 .hero-head{display:flex;align-items:flex-start;justify-content:space-between;gap:var(--sp-3);flex-wrap:wrap}
 .pipe .p.q{border-color:var(--cat-b)}
 .pipe .p.lib{border-color:var(--cat-a)}
@@ -375,8 +376,7 @@ code, .mono { font-family: var(--font-mono); font-size: .92em;
 .ctx-anatomy .slot{border:1px solid var(--line);border-radius:var(--r-s);padding:var(--sp-2) var(--sp-3);background:var(--surface)}
 .ctx-anatomy .slot b{font-family:var(--font-mono);font-size:var(--fs-small);letter-spacing:.06em}
 .lock{display:flex;gap:var(--sp-2);align-items:center;margin-top:var(--sp-2);color:var(--t-2)}
-.lock .ic{font-size:1.2rem}
-</style>
+.lock .ic{font-size:1.2rem}</style>
 <script>
 /* 主题 bootstrap：越早执行越不闪（FOUC 防护） */
 (() => { try {

