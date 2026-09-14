@@ -1,4 +1,4 @@
 packages:
   - 'skills/*'
   - 'examples/*'
-  - 'skills/aha/homepage'
+  - 'packages/*'

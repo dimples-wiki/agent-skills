@@ -103,7 +103,7 @@ Turn any complex concept into a **standalone, visually rich HTML explainer page*
 npx skills add dimples-wiki/agent-skills -s aha -y
 ```
 
-> CLI: `npx @dimples/aha check|serve|share` once published; until then run `node skills/aha/cli/src/cli.mjs <command>` from the repo.
+> CLI: `npx @dimples/aha check|serve|share` once published; until then run `node packages/aha-cli/src/cli.mjs <command>` from the repo.
 
 ## Installation
 

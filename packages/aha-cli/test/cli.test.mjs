@@ -91,7 +91,7 @@ test("aha new: every class in the scaffold is defined (tokens CSS or scaffold's 
   // 门 7 只锁 c-/t-/sim 前缀（锁美学、放布局），布局类靠这条测试守。
   const { scaffoldHtml } = await import("../src/new.mjs");
   const html = scaffoldHtml("测试概念", "test-concept");
-  const tokens = readFileSync(new URL("../../assets/design-tokens.css", import.meta.url), "utf8");
+  const tokens = readFileSync(new URL("../../../skills/aha/assets/design-tokens.css", import.meta.url), "utf8");
   const inlineCss = [...html.matchAll(/<style\b[^>]*>([\s\S]*?)<\/style>/gi)].map((m) => m[1]).join("\n");
   const css = tokens + "\n" + inlineCss;
   const used = new Set(

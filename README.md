@@ -117,7 +117,7 @@ npx skills add dimples-wiki/agent-skills -s aha -y
 ```
 
 > **CLI**：发布到 npm 后用 `npx @dimples/aha check|serve|share`（零运行时依赖）；
-> 发布前可直接跑仓库内等价命令：`node skills/aha/cli/src/cli.mjs <command>`
+> 发布前可直接跑仓库内等价命令：`node packages/aha-cli/src/cli.mjs <command>`
 > 存储布局：根目录 `~/.aha` 恒存在（配置 + cloudflared + 守护文件），HTML 产物目录由
 > `~/.aha/config.json` 决定。Windows 用户首次 `aha new` 会自动引导选择：建议非 C 盘
 > （或 `aha config "D:\aha" --migrate` 迁移存量 / `aha config --keep-c` 留守）。

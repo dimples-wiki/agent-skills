@@ -4,9 +4,9 @@ name: aha-cli
 
 on:
   push:
-    paths: ["skills/aha/cli/**", ".github/workflows/aha-cli-test.yml"]
+    paths: ["packages/aha-cli/**", ".github/workflows/aha-cli-test.yml"]
   pull_request:
-    paths: ["skills/aha/cli/**", ".github/workflows/aha-cli-test.yml"]
+    paths: ["packages/aha-cli/**", ".github/workflows/aha-cli-test.yml"]
   workflow_dispatch:
 
 jobs:
@@ -19,7 +19,7 @@ jobs:
     runs-on: ${{ matrix.os }}
     defaults:
       run:
-        working-directory: skills/aha/cli
+        working-directory: packages/aha-cli
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-node@v4
@@ -37,7 +37,7 @@ jobs:
     runs-on: windows-latest
     defaults:
       run:
-        working-directory: skills/aha/cli
+        working-directory: packages/aha-cli
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-node@v4

@@ -94,7 +94,7 @@ test("windowsStorageGuard: renders both prompt variants, blocks with true", () =
 
 // SKILL_VERSION 与 SKILL.md metadata.version 必须一致(发布防漂移)
 test("SKILL_VERSION 与 SKILL.md 同步", () => {
-  const md = readFileSync(join(__dirname, "../../SKILL.md"), "utf8");
+  const md = readFileSync(join(__dirname, "../../../skills/aha/SKILL.md"), "utf8");
   const v = md.match(/version:\s*([\d.]+)/)?.[1];
   assert.ok(v, "SKILL.md 应含 metadata.version");
   assert.equal(SKILL_VERSION, v, `CLI SKILL_VERSION=${SKILL_VERSION} 应等于 SKILL.md 的 ${v}`);

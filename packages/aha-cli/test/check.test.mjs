@@ -128,7 +128,7 @@ test("receipt shape: has gate list, counts, exit-ok flag", () => {
 });
 
 test("real assets: reference.html and simulator.html pass all gates", () => {
-  for (const f of ["../../assets/reference.html", "../../assets/simulator.html"]) {
+  for (const f of ["../../../skills/aha/assets/reference.html", "../../../skills/aha/assets/simulator.html"]) {
     const html = readFileSync(join(here, f), "utf8");
     const res = checkHtml(html);
     const failed = res.gates.filter((g) => g.status === "fail");
@@ -137,7 +137,7 @@ test("real assets: reference.html and simulator.html pass all gates", () => {
 });
 
 test("registry sync: c-*/t-* classes match assets/design-tokens.css definitions", () => {
-  const css = readFileSync(join(here, "../../assets/design-tokens.css"), "utf8");
+  const css = readFileSync(join(here, "../../../skills/aha/assets/design-tokens.css"), "utf8");
   const defined = new Set(
     [...css.matchAll(/\.((?:c|t)-[a-z0-9-]+)/g)].map((m) => m[1])
   );
@@ -212,7 +212,7 @@ test("M4: headings inside HTML comments are not counted", () => {
 test("canonical sync: embedded canonical equals assets/design-tokens.css", async () => {
   const { CANONICAL_TOKENS } = await import("../src/canonical-tokens.mjs");
   // 归一换行:Windows checkout 的 autocrlf 会把 assets 变 CRLF,内容语义没变
-  const css = readFileSync(join(here, "../../assets/design-tokens.css"), "utf8").replace(/\r\n/g, "\n");
+  const css = readFileSync(join(here, "../../../skills/aha/assets/design-tokens.css"), "utf8").replace(/\r\n/g, "\n");
   assert.equal(CANONICAL_TOKENS, css);
 });
 
