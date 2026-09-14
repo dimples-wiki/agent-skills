@@ -242,7 +242,7 @@ http://127.0.0.1:7332/<slug>.html
 ## 选配模式（默认不用，用户明确要求才触发）
 
 - **寓言故事**：用户在交付后说「补充寓言故事」/「加个寓言帮我记」/ fable 时，
-  读 `references/modes.md` 与 `assets/fable.md`，按其契约写 ≤1000 字同构寓言，
+  读 `references/modes.md` 与 `references/fable.md`，按其契约写 ≤1000 字同构寓言，
   插入自测块之后、账本之前，重跑 check 13/13。
 - **vgpu 着色器展示层**：仅当概念本质是连续场/波/流 **且** 用户明确要求更炫/实时演示；
   核心解释永不依赖它。细则见 `references/modes.md`。
